@@ -1,0 +1,8 @@
+* {
+    font-family: Arial;
+    font-size: 14px;
+}
+
+QLabel#title {
+    font-size: 50px;
+}
