@@ -4,10 +4,11 @@ from PyQt6.QtWidgets import (
     QTextEdit,
     QScrollArea,
     QPushButton,
+    QAbstractButton,
     QLabel,
     QHBoxLayout,
     QVBoxLayout,
-
+    QSizePolicy
 )
 from PyQt6.QtGui import QPixmap
 from PIL.ImageQt import ImageQt
@@ -34,17 +35,42 @@ class Home(QWidget):
         self.setStyleCSS(style_css)
 
     def initUI(self):
-        # Column 1
-        title = QLabel("MyChat")
+        self.master = QHBoxLayout()
+        self.master.addLayout(self.get_channels_ui(), 50)
+        self.master.addLayout(self.get_messages_ui(), 50)
+
+        self.setLayout(self.master)
+
+    def get_messages_ui(self):
+        self.chat = QTextEdit()
+        self.chat.setEnabled(False)
+
+        self.message = QTextEdit()
+        self.message.setFixedHeight(40)
+
+        send_message = QPushButton("Send")
+        send_message.setFixedHeight(40)
+
+        message_group = QHBoxLayout()
+        message_group.addWidget(self.message)
+        message_group.addWidget(send_message)
+
+        column = QVBoxLayout()
+        column.addWidget(self.chat)
+        column.addLayout(message_group)
+        return column
+
+    def get_channels_ui(self):
+        title = QLabel("TeamChat")
         title.setObjectName("title")
 
         self.users_online = QLabel("512 users online")
-        self.users_online.setObjectName("users_online")
         self.users_online.setFixedHeight(30)
+        self.users_online.setFixedWidth(150)
 
         self.channels_availables = QLabel("127 channels")
-        self.channels_availables.setObjectName("channels_availables")
         self.channels_availables.setFixedHeight(30)
+        self.channels_availables.setFixedWidth(150)
 
         header_subpartition = QVBoxLayout()
         header_subpartition.addWidget(self.users_online)
@@ -57,43 +83,27 @@ class Home(QWidget):
         self.channels = QVBoxLayout()
         self.get_channels()
 
-        # channels_scroll = QScrollArea()
-        # channels_scroll.setLayout(self.channels)
+        width_size_policy = QSizePolicy()
+        width_size_policy.setHorizontalStretch(1)
 
-        col1 = QVBoxLayout()
-        col1.addLayout(header)
-        col1.addLayout(self.channels)
+        container = QWidget()
+        container.setLayout(self.channels)
+        container.setSizePolicy(width_size_policy)
 
-        # Column 2
-        self.chat = QTextEdit()
-        self.chat.setEnabled(False)
+        channels_scroll = QScrollArea()
+        channels_scroll.setWidget(container)
 
-        self.message = QTextEdit()
-        self.message.setFixedHeight(40)
-
-        self.send_message = QPushButton("Send")
-        self.send_message.setFixedHeight(40)
-
-        message_group = QHBoxLayout()
-        message_group.addWidget(self.message)
-        message_group.addWidget(self.send_message)
-
-        col2 = QVBoxLayout()
-        col2.addWidget(self.chat)
-        col2.addLayout(message_group)
-
-        self.master = QHBoxLayout()
-        self.master.addLayout(col1, 50)
-        self.master.addLayout(col2, 50)
-
-        self.setLayout(self.master)
+        column = QVBoxLayout()
+        column.addLayout(header)
+        column.addWidget(channels_scroll)
+        return column
 
     def setStyleCSS(self, css_file_path):
         with open(css_file_path, "r") as css:
             self.setStyleSheet(css.read())
 
     def settings(self, screen_size):
-        self.setWindowTitle("Python MyChat")
+        self.setWindowTitle("TeamChat")
         self.setGeometryCenter(1000, 700, screen_size)
 
     def setGeometryCenter(self, width, height, screen_size):
@@ -102,7 +112,7 @@ class Home(QWidget):
         self.setGeometry(window_center_x, window_center_y, width, height)
 
     def get_channels(self):
-        for i in range(50):
+        for i in range(30):
             channel_info = {
                 'name': faker_instance.first_name(),
                 'protected': choice([True, False])
