@@ -1,5 +1,6 @@
 from PyQt6.QtWidgets import (
     QApplication,
+    QMainWindow,
     QWidget,
     QTextEdit,
     QScrollArea,
@@ -28,7 +29,7 @@ padlock_icon = IMAGE_PATH / "padlock.png"
 open_padlock_icon = IMAGE_PATH / "open_padlock.png"
 
 
-class Home(QWidget):
+class Home(QMainWindow):
     def __init__(self, screen_size):
         super().__init__()
         self.settings(screen_size)
@@ -40,7 +41,9 @@ class Home(QWidget):
         self.master.addLayout(self.get_channels_ui(), 50)
         self.master.addLayout(self.get_messages_ui(), 50)
 
-        self.setLayout(self.master)
+        central_widget = QWidget()
+        central_widget.setLayout(self.master)
+        self.setCentralWidget(central_widget)
 
     def get_messages_ui(self):
         self.chat = QTextEdit()
@@ -95,8 +98,6 @@ class Home(QWidget):
         channels_scroll.setWidgetResizable(True)
 
         # Users
-
-
         self.group_channel_layout = QVBoxLayout()
         self.group_channel_layout.setContentsMargins(20, 10, 10, 10)
 
