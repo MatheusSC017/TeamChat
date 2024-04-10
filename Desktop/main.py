@@ -8,9 +8,10 @@ from PyQt6.QtWidgets import (
     QLabel,
     QHBoxLayout,
     QVBoxLayout,
-    QSizePolicy
+    QGroupBox,
 )
 from PyQt6.QtGui import QPixmap
+from PyQt6.QtCore import QSize
 from PIL.ImageQt import ImageQt
 from PIL import Image
 import pathlib
@@ -61,6 +62,7 @@ class Home(QWidget):
         return column
 
     def get_channels_ui(self):
+        # Header
         title = QLabel("TeamChat")
         title.setObjectName("title")
 
@@ -80,22 +82,49 @@ class Home(QWidget):
         header.addWidget(title)
         header.addLayout(header_subpartition)
 
+        # Channels
         self.channels = QVBoxLayout()
         self.get_channels()
 
-        width_size_policy = QSizePolicy()
-        width_size_policy.setHorizontalStretch(1)
-
         container = QWidget()
+        container.setContentsMargins(0, 0, 0, 0)
         container.setLayout(self.channels)
-        container.setSizePolicy(width_size_policy)
 
         channels_scroll = QScrollArea()
         channels_scroll.setWidget(container)
+        channels_scroll.setWidgetResizable(True)
+
+        # Users
+        group_sub_channel_layout = QVBoxLayout()
+        group_sub_channel_layout.addWidget(QLabel(faker_instance.first_name()))
+        group_sub_channel_layout.addWidget(QLabel(faker_instance.first_name()))
+        group_sub_channel_layout.addWidget(QLabel(faker_instance.first_name()))
+        group_sub_channel_layout.addWidget(QLabel(faker_instance.first_name()))
+        group_sub_channel_layout.addWidget(QLabel(faker_instance.first_name()))
+        group_sub_channel_layout.setContentsMargins(30, 0, 0, 0)
+        group_sub_channel = QGroupBox("Sub-channel")
+        group_sub_channel.setLayout(group_sub_channel_layout)
+
+        group_channel_layout = QVBoxLayout()
+        group_channel_layout.addWidget(group_sub_channel)
+        group_channel_layout.setContentsMargins(20, 10, 10, 10)
+        group_channel = QGroupBox("Channel opened")
+        group_channel.setLayout(group_channel_layout)
+
+        self.user_opened_channel = QVBoxLayout()
+        self.user_opened_channel.addWidget(group_channel)
+
+        opened_channel = QWidget()
+        opened_channel.setLayout(self.user_opened_channel)
+
+        self.users_scroll = QScrollArea()
+        self.users_scroll.setWidget(opened_channel)
+        self.users_scroll.setWidgetResizable(True)
 
         column = QVBoxLayout()
         column.addLayout(header)
         column.addWidget(channels_scroll)
+        column.addWidget(self.users_scroll)
         return column
 
     def setStyleCSS(self, css_file_path):
@@ -118,22 +147,33 @@ class Home(QWidget):
                 'protected': choice([True, False])
             }
 
-            name = QLabel(channel_info['name'])
-            name.setFixedHeight(50)
-            password = QLabel("")
-            image = Image.open(padlock_icon if channel_info['protected'] else open_padlock_icon)
-            image = image.resize((15, 15))
-            image_qt = ImageQt(image)
-            password.setPixmap(QPixmap.fromImage(image_qt))
-            password.setFixedHeight(50)
-            password.setFixedWidth(30)
+            channel_button = PushButtonChannel(channel_info['name'], channel_info['protected'])
+            self.channels.addWidget(channel_button)
 
-            channel = QHBoxLayout()
-            channel.addWidget(name)
-            channel.addWidget(password)
-            channel.setObjectName("channel")
 
-            self.channels.addLayout(channel)
+class PushButtonChannel(QWidget):
+    def __init__(self, name, protected):
+        super(PushButtonChannel, self).__init__()
+        self.setContentsMargins(0, 0, 0, 0)
+
+        channel_name = QLabel(name)
+        channel_name.setFixedHeight(30)
+
+        image = Image.open(padlock_icon if protected else open_padlock_icon)
+        image = image.resize((15, 15))
+        image_qt = ImageQt(image)
+
+        channel_protected = QLabel("")
+        channel_protected.setPixmap(QPixmap.fromImage(image_qt))
+        channel_protected.setFixedHeight(30)
+        channel_protected.setFixedWidth(30)
+
+        channel = QHBoxLayout()
+        channel.addWidget(channel_name)
+        channel.addWidget(channel_protected)
+        channel.setObjectName("channel")
+
+        self.setLayout(channel)
 
 
 if __name__ == "__main__":
