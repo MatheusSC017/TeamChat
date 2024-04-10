@@ -95,21 +95,17 @@ class Home(QWidget):
         channels_scroll.setWidgetResizable(True)
 
         # Users
-        group_sub_channel_layout = QVBoxLayout()
-        group_sub_channel_layout.addWidget(QLabel(faker_instance.first_name()))
-        group_sub_channel_layout.addWidget(QLabel(faker_instance.first_name()))
-        group_sub_channel_layout.addWidget(QLabel(faker_instance.first_name()))
-        group_sub_channel_layout.addWidget(QLabel(faker_instance.first_name()))
-        group_sub_channel_layout.addWidget(QLabel(faker_instance.first_name()))
-        group_sub_channel_layout.setContentsMargins(30, 0, 0, 0)
-        group_sub_channel = QGroupBox("Sub-channel")
-        group_sub_channel.setLayout(group_sub_channel_layout)
 
-        group_channel_layout = QVBoxLayout()
-        group_channel_layout.addWidget(group_sub_channel)
-        group_channel_layout.setContentsMargins(20, 10, 10, 10)
+
+        self.group_channel_layout = QVBoxLayout()
+        self.group_channel_layout.setContentsMargins(20, 10, 10, 10)
+
+        self.get_sub_channel("Sub-Channel")
+        self.get_sub_channel("Sub-Channel 2")
+        self.get_sub_channel("Sub-Channel 3")
+
         group_channel = QGroupBox("Channel opened")
-        group_channel.setLayout(group_channel_layout)
+        group_channel.setLayout(self.group_channel_layout)
 
         self.user_opened_channel = QVBoxLayout()
         self.user_opened_channel.addWidget(group_channel)
@@ -150,6 +146,23 @@ class Home(QWidget):
             channel_button = PushButtonChannel(channel_info['name'], channel_info['protected'])
             self.channels.addWidget(channel_button)
 
+    def get_sub_channel(self, name):
+        group_sub_channel_layout = QVBoxLayout()
+        group_sub_channel_layout.setContentsMargins(30, 5, 5, 5)
+
+        self.get_users(group_sub_channel_layout)
+
+        group_sub_channel = QGroupBox(name)
+        group_sub_channel.setLayout(group_sub_channel_layout)
+
+        self.group_channel_layout.addWidget(group_sub_channel)
+
+    def get_users(self, layout):
+        layout.addWidget(QLabel(faker_instance.first_name()))
+        layout.addWidget(QLabel(faker_instance.first_name()))
+        layout.addWidget(QLabel(faker_instance.first_name()))
+        layout.addWidget(QLabel(faker_instance.first_name()))
+        layout.addWidget(QLabel(faker_instance.first_name()))
 
 class PushButtonChannel(QWidget):
     def __init__(self, name, protected):
