@@ -11,7 +11,7 @@ from PyQt6.QtWidgets import (
     QVBoxLayout,
     QGroupBox,
 )
-from PyQt6.QtGui import QPixmap
+from PyQt6.QtGui import QPixmap, QAction
 from PyQt6.QtCore import QSize
 from PIL.ImageQt import ImageQt
 from PIL import Image
@@ -164,6 +164,9 @@ class Home(QMainWindow):
         layout.addWidget(QLabel(faker_instance.first_name()))
         layout.addWidget(QLabel(faker_instance.first_name()))
         layout.addWidget(QLabel(faker_instance.first_name()))
+
+    def send_message(self):
+        print("clicked")
 
 class PushButtonChannel(QWidget):
     def __init__(self, name, protected):
