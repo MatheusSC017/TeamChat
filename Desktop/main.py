@@ -18,6 +18,7 @@ from PIL import Image
 import pathlib
 import faker
 from random import choice
+from datetime import datetime
 
 
 faker_instance = faker.Faker()
@@ -52,12 +53,13 @@ class Home(QMainWindow):
         self.message = QTextEdit()
         self.message.setFixedHeight(40)
 
-        send_message = QPushButton("Send")
-        send_message.setFixedHeight(40)
+        self.send_message = QPushButton("Send")
+        self.send_message.setFixedHeight(40)
+        self.send_message.clicked.connect(self.send_message)
 
         message_group = QHBoxLayout()
         message_group.addWidget(self.message)
-        message_group.addWidget(send_message)
+        message_group.addWidget(self.send_message)
 
         column = QVBoxLayout()
         column.addWidget(self.chat)
@@ -166,7 +168,9 @@ class Home(QMainWindow):
         layout.addWidget(QLabel(faker_instance.first_name()))
 
     def send_message(self):
-        print("clicked")
+        self.chat.setPlainText(f"{self.chat.toPlainText()}\n{datetime.now().strftime('%d/%m/%y %H:%M:%S')} - username: {self.message.toPlainText()}")
+        self.message.setPlainText("")
+
 
 class PushButtonChannel(QWidget):
     def __init__(self, name, protected):
