@@ -15,30 +15,44 @@ async def index(request):
 
     await ws_current.prepare(request)
 
-    name = f"user{random.randint(0, 9999999)}"
-    log.info('')
+    username = f"user{random.randint(0, 9999999)}"
+    log.info('%s connected', username)
 
-    await ws_current.send_json({'action': 'connect', 'name': name})
+    await ws_current.send_json({'action': 'connect', 'name': username})
 
-    for ws in request.app['websockets'].values():
-        await ws.send_json({'action': 'join', 'name': name})
-    request.app['websockets'][name] = ws_current
+    if request.app['websockets'].get(username):
+        return ws_current
+    else:
+        for ws in request.app['websockets'].values():
+            await ws.send_json({'action': 'join', 'name': username})
+        request.app['websockets'][username] = ws_current
 
     while True:
-        msg = await ws_current.receive()
+        message = await ws_current.receive()
 
-        if msg.type == aiohttp.WSMsgType.text:
-            for ws in request['websockets'].values():
-                if ws is not ws_current:
-                    await ws.send_json(
-                        {'action': 'sent', 'name': name, 'text': msg.data}
-                    )
+        if message.type == aiohttp.WSMsgType.text:
+            message_json = message.json()
+            action = message_json.get('action')
+
+            if action == 'chat_message':
+                for ws in request.app['websockets'].values():
+                    if ws is not ws_current:
+                        await ws.send_json(
+                            {'action': 'sent', 'name': username, 'text': message_json.get('message')}
+                        )
+
+            elif action == 'user_list':
+                user_list = request.app['websockets'].keys()
+                await current_websocket.send_json(user_list)
+
         else:
             break
 
-    del request.app['websockets'][name]
-    log.info('%s disconnected.', name)
+    del request.app['websockets'][username]
+
+    # Broadcast message about disconnected user
+    log.info('%s disconnected.', username)
     for ws in request.app['websockets'].values():
-        await ws.send_json({'action': 'disconnect', 'name': name})
+        await ws.send_json({'action': 'disconnect', 'name': username})
 
     return ws_current
