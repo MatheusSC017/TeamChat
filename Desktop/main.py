@@ -3,6 +3,7 @@ from PyQt6.QtWidgets import (
     QMainWindow,
     QWidget,
     QTextEdit,
+    QLineEdit,
     QScrollArea,
     QPushButton,
     QAbstractButton,
@@ -12,7 +13,7 @@ from PyQt6.QtWidgets import (
     QGroupBox,
 )
 from PyQt6.QtGui import QPixmap, QAction
-from PyQt6.QtCore import QSize
+from PyQt6.QtCore import Qt
 from PIL.ImageQt import ImageQt
 from PIL import Image
 import pathlib
@@ -50,16 +51,19 @@ class Home(QMainWindow):
         self.chat = QTextEdit()
         self.chat.setEnabled(False)
 
-        self.message = QTextEdit()
+        self.message = QLineEdit()
         self.message.setFixedHeight(40)
+        self.message.returnPressed.connect(self.send_message)
+        self.message.setEnabled(False)
 
-        self.send_message = QPushButton("Send")
-        self.send_message.setFixedHeight(40)
-        self.send_message.clicked.connect(self.send_message)
+        self.button_send_message = QPushButton("Send")
+        self.button_send_message.setFixedHeight(40)
+        self.button_send_message.clicked.connect(self.send_message)
+        self.button_send_message.setEnabled(False)
 
         message_group = QHBoxLayout()
         message_group.addWidget(self.message)
-        message_group.addWidget(self.send_message)
+        message_group.addWidget(self.button_send_message)
 
         column = QVBoxLayout()
         column.addWidget(self.chat)
@@ -168,8 +172,8 @@ class Home(QMainWindow):
         layout.addWidget(QLabel(faker_instance.first_name()))
 
     def send_message(self):
-        self.chat.setPlainText(f"{self.chat.toPlainText()}\n{datetime.now().strftime('%d/%m/%y %H:%M:%S')} - username: {self.message.toPlainText()}")
-        self.message.setPlainText("")
+        self.chat.setPlainText(f"{self.chat.toPlainText()}\n{datetime.now().strftime('%d/%m/%y %H:%M:%S')} - username: {self.message.text()}")
+        self.message.setText("")
 
 
 class PushButtonChannel(QWidget):
