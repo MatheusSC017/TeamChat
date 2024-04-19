@@ -38,7 +38,7 @@ async def index(request):
                 for ws in request.app['websockets'].values():
                     if ws is not ws_current:
                         await ws.send_json(
-                            {'action': 'sent', 'name': username, 'text': message_json.get('message')}
+                            {'action': 'chat_message', 'user': username, 'message': message_json.get('message')}
                         )
 
             elif action == 'user_list':

@@ -1,38 +1,22 @@
 import asyncio
-import logging
+import os
+from aiohttp import ClientSession
+from actions import send_input_message, subscribe_to_messages
+from dotenv import load_dotenv
 
-from aioconsole import ainput
-from aiohttp import ClientSession, ClientWebSocketResponse
-from aiohttp.http_websocket import WSMessage
-from aiohttp.web import WSMsgType
+load_dotenv()
 
-logging.basicConfig(level=logging.INFO)
-logger = logging.getLogger('client')
-
-
-async def subscribe_to_messages(websocket: ClientWebSocketResponse) -> None:
-    async for message in websocket:
-        if isinstance(message, WSMessage):
-            if message.type == WSMsgType.text:
-                message_json = message.json()
-                if message_json.get('action') == 'chat_message' and not message_json.get('sucess'):
-                    print(f'>>>{message_json["user"]}: {message_json["message"]}')
-                logger.info('> Message from server received: %s', message_json)
-
-
-async def send_input_message(websocket: ClientWebSocketResponse) -> None:
-    while True:
-        message = await ainput('<<<')
-        if message == 'command close':
-            await websocket.close()
-        else:
-            logger.info('\n< Sending message: %s', message)
-            await websocket.send_json({'action': 'chat_message', 'message': message})
+HOST = os.environ.get("HOST")
+PORT = os.environ.get("PORT")
+SSL = bool(os.environ.get("SSL"))
 
 
 async def handler() -> None:
+    if HOST is None or PORT is None:
+        raise Exception("Server URL or SSL config not setted.")
+
     async with ClientSession() as session:
-        async with session.ws_connect('http://127.0.0.1:8080/', ssl=False) as ws:
+        async with session.ws_connect(f'{HOST}:{PORT}', ssl=SSL) as ws:
             read_message_task = asyncio.create_task(subscribe_to_messages(websocket=ws))
 
             send_input_message_task = asyncio.create_task(send_input_message(websocket=ws))
