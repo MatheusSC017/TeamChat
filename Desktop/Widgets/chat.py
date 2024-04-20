@@ -2,8 +2,10 @@ from PyQt6.QtWidgets import QWidget
 from PyQt6.QtCore import pyqtSignal
 from aiohttp import ClientSession
 from aiohttp.http_websocket import WSMessage
+from aiohttp import ClientWebSocketResponse
 from aiohttp.web import WSMsgType
 from dotenv import load_dotenv
+from datetime import datetime
 import asyncio
 import os
 
@@ -17,15 +19,17 @@ SSL = bool(os.environ.get("SSL"))
 class MessageHandler(QWidget):
     messageReceived = pyqtSignal(str)
 
-    async def handler(self):
+    async def handler(self) -> None:
         if HOST is None or PORT is None:
             raise Exception("Server URL or SSL config not setted.")
 
         async with ClientSession() as session:
             async with session.ws_connect(f'{HOST}:{PORT}', ssl=SSL) as ws:
+                self.websocket = ws
+
                 read_message_task = asyncio.create_task(self.subscribe_to_messages(websocket=ws))
 
-                # send_input_message_task = asyncio.create_task(send_input_message(websocket=ws))
+                # send_input_message_task = asyncio.create_task(self.send_input_message(websocket=ws))
 
                 done, pending = await asyncio.wait(
                     [read_message_task, ], return_when=asyncio.FIRST_COMPLETED,
@@ -36,10 +40,24 @@ class MessageHandler(QWidget):
                 for task in pending:
                     task.cancel()
 
-    async def subscribe_to_messages(self, websocket):
+    async def send_input_message(self, message: str) -> None:
+        await self.websocket.send_json({'action': 'chat_message',
+                                        'user': self.user,
+                                        'message': message,
+                                        'datetime': datetime.now().strftime('%d/%m/%y %H:%M:%S')})
+
+    async def subscribe_to_messages(self, websocket: ClientWebSocketResponse) -> None:
         while True:
             async for message in websocket:
                 if isinstance(message, WSMessage) and message.type == WSMsgType.text:
                     message_json = message.json()
-                    if message_json.get('action') == 'chat_message':
-                        self.messageReceived.emit(f'{message_json["user"]}: {message_json["message"]}')
+                    action = message_json.get('action')
+                    if action == 'connect':
+                        self.user = message_json.get('user')
+                        self.messageReceived.emit(f'{message_json["datetime"]} - You are connected with the name: {self.user}')
+                    elif action == 'disconnect':
+                        self.messageReceived.emit(f'{message_json["datetime"]} - {message_json["user"]} disconnected')
+                    elif action == 'join':
+                        self.messageReceived.emit(f'{message_json["datetime"]} - {message_json["user"]} connected')
+                    elif action == 'chat_message':
+                        self.messageReceived.emit(f'{message_json["datetime"]} - {message_json["user"]}: {message_json["message"]}')

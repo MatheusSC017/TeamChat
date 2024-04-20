@@ -12,15 +12,16 @@ from PyQt6.QtWidgets import (
 )
 from PyQt6.QtCore import pyqtSlot
 from threading import Thread
+from datetime import datetime
 import faker
 import asyncio
 from random import choice
-from datetime import datetime
 from Widgets import buttons, chat
 faker_instance = faker.Faker()
 
 
 class Home(QMainWindow):
+
     def __init__(self, screen_size, base_path):
         super().__init__()
         self.base_path = base_path
@@ -38,6 +39,13 @@ class Home(QMainWindow):
 
     def closeEvent(self):
         self.chat_thread.kill = True
+
+    def send_message(self):
+        asyncio.run(self.message_handler.send_input_message(self.message.text()))
+        self.chat.setPlainText(f"{self.chat.toPlainText()}\n"
+                               f"{datetime.now().strftime('%d/%m/%y %H:%M:%S')} - {self.message_handler.user}: "
+                               f"{self.message.text()}")
+        self.message.clear()
 
     @pyqtSlot(str)
     def on_message_received(self, message):
@@ -175,7 +183,3 @@ class Home(QMainWindow):
         layout.addWidget(QLabel(faker_instance.first_name()))
         layout.addWidget(QLabel(faker_instance.first_name()))
         layout.addWidget(QLabel(faker_instance.first_name()))
-
-    def send_message(self):
-        self.chat.setPlainText(f"{self.chat.toPlainText()}\n{datetime.now().strftime('%d/%m/%y %H:%M:%S')} - username: {self.message.text()}")
-        self.message.setText("")

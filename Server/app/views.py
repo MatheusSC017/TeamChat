@@ -1,8 +1,9 @@
+from datetime import datetime
 import logging
+import random
 
 import aiohttp
 from aiohttp import web
-import random
 
 log = logging.getLogger(__name__)
 
@@ -18,13 +19,17 @@ async def index(request):
     username = f"user{random.randint(0, 9999999)}"
     log.info('%s connected', username)
 
-    await ws_current.send_json({'action': 'connect', 'name': username})
+    await ws_current.send_json({'action': 'connect',
+                                'user': username,
+                                'datetime': datetime.now().strftime('%d/%m/%y %H:%M:%S')})
 
     if request.app['websockets'].get(username):
         return ws_current
     else:
         for ws in request.app['websockets'].values():
-            await ws.send_json({'action': 'join', 'name': username})
+            await ws.send_json({'action': 'join',
+                                'user': username,
+                                'datetime': datetime.now().strftime('%d/%m/%y %H:%M:%S')})
         request.app['websockets'][username] = ws_current
 
     while True:
@@ -34,11 +39,15 @@ async def index(request):
             message_json = message.json()
             action = message_json.get('action')
 
+            print(message_json)
             if action == 'chat_message':
                 for ws in request.app['websockets'].values():
                     if ws is not ws_current:
                         await ws.send_json(
-                            {'action': 'chat_message', 'user': username, 'message': message_json.get('message')}
+                            {'action': 'chat_message',
+                             'user': username,
+                             'datetime': message_json.get('datetime'),
+                             'message': message_json.get('message')}
                         )
 
             elif action == 'user_list':
@@ -53,6 +62,8 @@ async def index(request):
     # Broadcast message about disconnected user
     log.info('%s disconnected.', username)
     for ws in request.app['websockets'].values():
-        await ws.send_json({'action': 'disconnect', 'name': username})
+        await ws.send_json({'action': 'disconnect',
+                            'user': username,
+                            'datetime': datetime.now().strftime('%d/%m/%y %H:%M:%S')})
 
     return ws_current
