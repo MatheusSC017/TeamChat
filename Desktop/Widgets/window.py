@@ -31,10 +31,13 @@ class Home(QMainWindow):
 
         self.message_handler = chat.MessageHandler()
         self.message_handler.messageReceived.connect(self.on_message_received)
+        self.chat_thread = Thread(target=asyncio.run, args=(self.message_handler.handler(),))
 
     def start_chat(self):
-        chat_thread = Thread(target=asyncio.run, args=(self.message_handler.handler(),))
-        chat_thread.start()
+        self.chat_thread.start()
+
+    def closeEvent(self):
+        self.chat_thread.kill = True
 
     @pyqtSlot(str)
     def on_message_received(self, message):
