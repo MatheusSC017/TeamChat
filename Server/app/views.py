@@ -16,22 +16,6 @@ async def index(request):
 
     await ws_current.prepare(request)
 
-    username = f"user{random.randint(0, 9999999)}"
-    log.info('%s connected', username)
-
-    await ws_current.send_json({'action': 'connect',
-                                'user': username,
-                                'datetime': datetime.now().strftime('%d/%m/%y %H:%M:%S')})
-
-    if request.app['websockets'].get(username):
-        return ws_current
-    else:
-        for ws in request.app['websockets'].values():
-            await ws.send_json({'action': 'join',
-                                'user': username,
-                                'datetime': datetime.now().strftime('%d/%m/%y %H:%M:%S')})
-        request.app['websockets'][username] = ws_current
-
     while True:
         message = await ws_current.receive()
 
@@ -39,7 +23,6 @@ async def index(request):
             message_json = message.json()
             action = message_json.get('action')
 
-            print(message_json)
             if action == 'chat_message':
                 for ws in request.app['websockets'].values():
                     if ws is not ws_current:
@@ -49,6 +32,9 @@ async def index(request):
                              'datetime': message_json.get('datetime'),
                              'message': message_json.get('message')}
                         )
+            elif action == 'connect':
+                username = message_json.get('username')
+                await connect(request, ws_current, username)
 
             elif action == 'user_list':
                 user_list = request.app['websockets'].keys()
@@ -67,3 +53,20 @@ async def index(request):
                             'datetime': datetime.now().strftime('%d/%m/%y %H:%M:%S')})
 
     return ws_current
+
+
+async def connect(request, ws_current, username):
+    log.info('%s connected', username)
+
+    await ws_current.send_json({'action': 'connect',
+                                'user': username,
+                                'datetime': datetime.now().strftime('%d/%m/%y %H:%M:%S')})
+
+    if request.app['websockets'].get(username):
+        return ws_current
+    else:
+        for ws in request.app['websockets'].values():
+            await ws.send_json({'action': 'join',
+                                'user': username,
+                                'datetime': datetime.now().strftime('%d/%m/%y %H:%M:%S')})
+        request.app['websockets'][username] = ws_current

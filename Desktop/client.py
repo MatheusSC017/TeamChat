@@ -1,7 +1,7 @@
 import asyncio
 import os
 from aiohttp import ClientSession
-from actions import send_input_message, subscribe_to_messages
+from actions import send_input_message, subscribe_to_messages, connect
 from dotenv import load_dotenv
 
 load_dotenv()
@@ -17,6 +17,8 @@ async def handler() -> None:
 
     async with ClientSession() as session:
         async with session.ws_connect(f'{HOST}:{PORT}', ssl=SSL) as ws:
+            await connect(ws)
+
             read_message_task = asyncio.create_task(subscribe_to_messages(websocket=ws))
 
             send_input_message_task = asyncio.create_task(send_input_message(websocket=ws))

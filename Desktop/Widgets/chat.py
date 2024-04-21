@@ -6,6 +6,7 @@ from aiohttp import ClientWebSocketResponse
 from aiohttp.web import WSMsgType
 from dotenv import load_dotenv
 from datetime import datetime
+import random
 import asyncio
 import os
 
@@ -27,9 +28,9 @@ class MessageHandler(QWidget):
             async with session.ws_connect(f'{HOST}:{PORT}', ssl=SSL) as ws:
                 self.websocket = ws
 
-                read_message_task = asyncio.create_task(self.subscribe_to_messages(websocket=ws))
+                await self.connect()
 
-                # send_input_message_task = asyncio.create_task(self.send_input_message(websocket=ws))
+                read_message_task = asyncio.create_task(self.subscribe_to_messages())
 
                 done, pending = await asyncio.wait(
                     [read_message_task, ], return_when=asyncio.FIRST_COMPLETED,
@@ -40,15 +41,20 @@ class MessageHandler(QWidget):
                 for task in pending:
                     task.cancel()
 
+    async def connect(self) -> None:
+        await self.websocket.send_json({'action': 'connect',
+                                   'username': f'user{random.randint(1111111, 9999999)}'})
+
+
     async def send_input_message(self, message: str) -> None:
         await self.websocket.send_json({'action': 'chat_message',
                                         'user': self.user,
                                         'message': message,
                                         'datetime': datetime.now().strftime('%d/%m/%y %H:%M:%S')})
 
-    async def subscribe_to_messages(self, websocket: ClientWebSocketResponse) -> None:
+    async def subscribe_to_messages(self) -> None:
         while True:
-            async for message in websocket:
+            async for message in self.websocket:
                 if isinstance(message, WSMessage) and message.type == WSMsgType.text:
                     message_json = message.json()
                     action = message_json.get('action')

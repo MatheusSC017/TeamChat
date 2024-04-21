@@ -1,3 +1,5 @@
+import random
+
 from aioconsole import ainput
 from aiohttp import ClientWebSocketResponse
 from aiohttp.http_websocket import WSMessage
@@ -23,3 +25,8 @@ async def send_input_message(websocket: ClientWebSocketResponse) -> None:
             await websocket.send_json({'action': 'chat_message',
                                        'message': message,
                                        'datetime': datetime.now().strftime('%d/%m/%y %H:%M:%S')})
+
+
+async def connect(websocket: ClientWebSocketResponse) -> None:
+    await websocket.send_json({'action': 'connect',
+                               'username': f'user{random.randint(1111111, 9999999)}'})
