@@ -19,6 +19,8 @@ SSL = bool(os.environ.get("SSL"))
 
 class MessageHandler(QWidget):
     messageReceived = pyqtSignal(str)
+    websocket = None
+    username = None
 
     async def handler(self) -> None:
         if HOST is None or PORT is None:
@@ -42,9 +44,12 @@ class MessageHandler(QWidget):
                     task.cancel()
 
     async def connect(self) -> None:
+        self.username = f'user{random.randint(1111111, 9999999)}'
         await self.websocket.send_json({'action': 'connect',
-                                   'username': f'user{random.randint(1111111, 9999999)}'})
+                                        'username': self.username})
 
+    async def disconnect(self) -> None:
+        await self.websocket.send_json({'action': 'disconnect', })
 
     async def send_input_message(self, message: str) -> None:
         await self.websocket.send_json({'action': 'chat_message',

@@ -14,6 +14,8 @@ async def subscribe_to_messages(websocket: ClientWebSocketResponse) -> None:
                 message_json = message.json()
                 if message_json.get('action') == 'chat_message':
                     print(f'>>>{message_json["datetime"]} - {message_json["user"]}: {message_json["message"]}')
+                else:
+                    print(message_json)
 
 
 async def send_input_message(websocket: ClientWebSocketResponse) -> None:

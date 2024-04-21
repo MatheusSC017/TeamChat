@@ -38,6 +38,7 @@ class Home(QMainWindow):
         self.chat_thread.start()
 
     def closeEvent(self):
+        asyncio.run(self.message_handler.disconnect())
         self.chat_thread.kill = True
 
     def send_message(self):

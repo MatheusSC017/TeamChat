@@ -9,6 +9,7 @@ log = logging.getLogger(__name__)
 
 
 async def index(request):
+    username = None
     ws_current = web.WebSocketResponse()
     ws_ready = ws_current.can_prepare(request)
     if not ws_ready.ok:
@@ -24,17 +25,22 @@ async def index(request):
             action = message_json.get('action')
 
             if action == 'chat_message':
-                for ws in request.app['websockets'].values():
-                    if ws is not ws_current:
-                        await ws.send_json(
-                            {'action': 'chat_message',
-                             'user': username,
-                             'datetime': message_json.get('datetime'),
-                             'message': message_json.get('message')}
-                        )
+                if username is not None and request.app['websockets'].get(username) is not None:
+                    for ws in request.app['websockets'].values():
+                        if ws is not ws_current:
+                            await ws.send_json(
+                                {'action': 'chat_message',
+                                 'user': username,
+                                 'datetime': message_json.get('datetime'),
+                                 'message': message_json.get('message')}
+                            )
+
             elif action == 'connect':
                 username = message_json.get('username')
                 await connect(request, ws_current, username)
+
+            elif action == 'disconnect':
+                await disconnect(request, username)
 
             elif action == 'user_list':
                 user_list = request.app['websockets'].keys()
@@ -43,14 +49,7 @@ async def index(request):
         else:
             break
 
-    del request.app['websockets'][username]
-
-    # Broadcast message about disconnected user
-    log.info('%s disconnected.', username)
-    for ws in request.app['websockets'].values():
-        await ws.send_json({'action': 'disconnect',
-                            'user': username,
-                            'datetime': datetime.now().strftime('%d/%m/%y %H:%M:%S')})
+    await disconnect(request, username)
 
     return ws_current
 
@@ -70,3 +69,14 @@ async def connect(request, ws_current, username):
                                 'user': username,
                                 'datetime': datetime.now().strftime('%d/%m/%y %H:%M:%S')})
         request.app['websockets'][username] = ws_current
+
+
+async def disconnect(request, username):
+    if username is not None and request.app['websockets'].get(username) is not None:
+        del request.app['websockets'][username]
+
+        log.info('%s disconnected.', username)
+        for ws in request.app['websockets'].values():
+            await ws.send_json({'action': 'disconnect',
+                                'user': username,
+                                'datetime': datetime.now().strftime('%d/%m/%y %H:%M:%S')})
