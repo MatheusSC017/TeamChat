@@ -36,7 +36,7 @@ async def index(request):
                             )
 
             elif action == 'connect':
-                username = message_json.get('username')
+                username = message_json.get('user')
                 await connect(request, ws_current, username)
 
             elif action == 'disconnect':
@@ -57,15 +57,11 @@ async def index(request):
 async def connect(request, ws_current, username):
     log.info('%s connected', username)
 
-    await ws_current.send_json({'action': 'connect',
-                                'user': username,
-                                'datetime': datetime.now().strftime('%d/%m/%y %H:%M:%S')})
-
     if request.app['websockets'].get(username):
         return ws_current
     else:
         for ws in request.app['websockets'].values():
-            await ws.send_json({'action': 'join',
+            await ws.send_json({'action': 'connect',
                                 'user': username,
                                 'datetime': datetime.now().strftime('%d/%m/%y %H:%M:%S')})
         request.app['websockets'][username] = ws_current

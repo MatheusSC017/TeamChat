@@ -36,6 +36,7 @@ class Home(QMainWindow):
 
     def start_chat(self):
         self.chat_thread.start()
+        self.chat.setPlainText('You connected in the room')
 
     def closeEvent(self):
         asyncio.run(self.message_handler.disconnect())

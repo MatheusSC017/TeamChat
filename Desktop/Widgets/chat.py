@@ -20,7 +20,7 @@ SSL = bool(os.environ.get("SSL"))
 class MessageHandler(QWidget):
     messageReceived = pyqtSignal(str)
     websocket = None
-    username = None
+    user = None
 
     async def handler(self) -> None:
         if HOST is None or PORT is None:
@@ -44,9 +44,9 @@ class MessageHandler(QWidget):
                     task.cancel()
 
     async def connect(self) -> None:
-        self.username = f'user{random.randint(1111111, 9999999)}'
+        self.user = f'user{random.randint(1111111, 9999999)}'
         await self.websocket.send_json({'action': 'connect',
-                                        'username': self.username})
+                                        'user': self.user})
 
     async def disconnect(self) -> None:
         await self.websocket.send_json({'action': 'disconnect', })
@@ -64,11 +64,9 @@ class MessageHandler(QWidget):
                     message_json = message.json()
                     action = message_json.get('action')
                     if action == 'connect':
-                        self.user = message_json.get('user')
-                        self.messageReceived.emit(f'{message_json["datetime"]} - You are connected with the name: {self.user}')
+                        self.messageReceived.emit(f'{message_json["datetime"]} - {message_json["user"]} connected')
                     elif action == 'disconnect':
                         self.messageReceived.emit(f'{message_json["datetime"]} - {message_json["user"]} disconnected')
-                    elif action == 'join':
-                        self.messageReceived.emit(f'{message_json["datetime"]} - {message_json["user"]} connected')
                     elif action == 'chat_message':
-                        self.messageReceived.emit(f'{message_json["datetime"]} - {message_json["user"]}: {message_json["message"]}')
+                        self.messageReceived.emit(f'{message_json["datetime"]} - '
+                                                  f'{message_json["user"]}: {message_json["message"]}')

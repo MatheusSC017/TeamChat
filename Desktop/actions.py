@@ -30,5 +30,7 @@ async def send_input_message(websocket: ClientWebSocketResponse) -> None:
 
 
 async def connect(websocket: ClientWebSocketResponse) -> None:
+    user = f'user{random.randint(1111111, 9999999)}'
     await websocket.send_json({'action': 'connect',
-                               'username': f'user{random.randint(1111111, 9999999)}'})
+                               'user': user})
+    return user

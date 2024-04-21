@@ -17,7 +17,7 @@ async def handler() -> None:
 
     async with ClientSession() as session:
         async with session.ws_connect(f'{HOST}:{PORT}', ssl=SSL) as ws:
-            await connect(ws)
+            user = await connect(ws)
 
             read_message_task = asyncio.create_task(subscribe_to_messages(websocket=ws))
 
