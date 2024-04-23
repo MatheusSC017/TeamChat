@@ -1,6 +1,8 @@
 from PyQt6.QtWidgets import (
     QMainWindow,
     QWidget,
+    QMenuBar,
+    QMenu,
     QTextEdit,
     QLineEdit,
     QScrollArea,
@@ -10,6 +12,7 @@ from PyQt6.QtWidgets import (
     QVBoxLayout,
     QGroupBox,
 )
+from PyQt6.QtGui import QAction
 from PyQt6.QtCore import pyqtSlot
 from threading import Thread
 from datetime import datetime
@@ -21,6 +24,7 @@ faker_instance = faker.Faker()
 
 
 class Home(QMainWindow):
+    connected = False
 
     def __init__(self, screen_size, base_path):
         super().__init__()
@@ -34,26 +38,31 @@ class Home(QMainWindow):
         self.message_handler.messageReceived.connect(self.on_message_received)
         self.chat_thread = Thread(target=asyncio.run, args=(self.message_handler.handler(),))
 
-    def start_chat(self):
-        self.chat_thread.start()
-        self.chat.setPlainText('You connected in the room')
+    def setStyleCSS(self, css_file_path):
+        with open(css_file_path, "r") as css:
+            self.setStyleSheet(css.read())
 
-    def closeEvent(self):
-        asyncio.run(self.message_handler.disconnect())
-        self.chat_thread.kill = True
+    def settings(self, screen_size):
+        self.setWindowTitle("TeamChat")
+        self.set_geometry_center(1000, 700, screen_size)
 
-    def send_message(self):
-        asyncio.run(self.message_handler.send_input_message(self.message.text()))
-        self.chat.setPlainText(f"{self.chat.toPlainText()}\n"
-                               f"{datetime.now().strftime('%d/%m/%y %H:%M:%S')} - {self.message_handler.user}: "
-                               f"{self.message.text()}")
-        self.message.clear()
-
-    @pyqtSlot(str)
-    def on_message_received(self, message):
-        self.chat.append(message)
+    def set_geometry_center(self, width, height, screen_size):
+        window_center_x = (screen_size.width() - width) // 2
+        window_center_y = (screen_size.height() - height) // 2
+        self.setGeometry(window_center_x, window_center_y, width, height)
 
     def initUI(self):
+        menubar = QMenuBar(self)
+        self.setMenuBar(menubar)
+
+        main_menu = QMenu("Main", self)
+        menubar.addMenu(main_menu)
+
+        self.connect_action = QAction("Connect", self)
+        main_menu.addAction(self.connect_action)
+
+        self.connect_action.triggered.connect(self.start_end_connection)
+
         self.master = QHBoxLayout()
         self.master.addLayout(self.get_channels_ui(), 50)
         self.master.addLayout(self.get_messages_ui(), 50)
@@ -69,12 +78,12 @@ class Home(QMainWindow):
         self.message = QLineEdit()
         self.message.setFixedHeight(40)
         self.message.returnPressed.connect(self.send_message)
-        # self.message.setEnabled(False)
+        self.message.setEnabled(False)
 
         self.button_send_message = QPushButton("Send")
         self.button_send_message.setFixedHeight(40)
         self.button_send_message.clicked.connect(self.send_message)
-        # self.button_send_message.setEnabled(False)
+        self.button_send_message.setEnabled(False)
 
         message_group = QHBoxLayout()
         message_group.addWidget(self.message)
@@ -145,18 +154,29 @@ class Home(QMainWindow):
         column.addWidget(self.users_scroll)
         return column
 
-    def setStyleCSS(self, css_file_path):
-        with open(css_file_path, "r") as css:
-            self.setStyleSheet(css.read())
+    def closeEvent(self):
+        if self.connected:
+            self.end_chat()
 
-    def settings(self, screen_size):
-        self.setWindowTitle("TeamChat")
-        self.set_geometry_center(1000, 700, screen_size)
+    def start_end_connection(self):
+        self.start_chat() if not (self.connected) else self.end_chat()
 
-    def set_geometry_center(self, width, height, screen_size):
-        window_center_x = (screen_size.width() - width) // 2
-        window_center_y = (screen_size.height() - height) // 2
-        self.setGeometry(window_center_x, window_center_y, width, height)
+    def start_chat(self):
+        self.chat_thread.start()
+        self.connected = True
+        self.connect_action.setText('Disconnect')
+        self.chat.setPlainText('You connected to the server')
+        self.message.setEnabled(True)
+        self.button_send_message.setEnabled(True)
+
+    def end_chat(self):
+        asyncio.run(self.message_handler.disconnect())
+        self.chat_thread.kill = True
+        self.connected = False
+        self.connect_action.setText('Connect')
+        self.chat.append('You have disconnected from the server')
+        self.message.setEnabled(False)
+        self.button_send_message.setEnabled(False)
 
     def get_channels(self):
         for i in range(30):
@@ -185,3 +205,14 @@ class Home(QMainWindow):
         layout.addWidget(QLabel(faker_instance.first_name()))
         layout.addWidget(QLabel(faker_instance.first_name()))
         layout.addWidget(QLabel(faker_instance.first_name()))
+
+    def send_message(self):
+        asyncio.run(self.message_handler.send_input_message(self.message.text()))
+        self.chat.setPlainText(f"{self.chat.toPlainText()}\n"
+                               f"{datetime.now().strftime('%d/%m/%y %H:%M:%S')} - {self.message_handler.user}: "
+                               f"{self.message.text()}")
+        self.message.clear()
+
+    @pyqtSlot(str)
+    def on_message_received(self, message):
+        self.chat.append(message)

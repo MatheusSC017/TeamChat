@@ -25,8 +25,8 @@ async def index(request):
             action = message_json.get('action')
 
             if action == 'chat_message':
-                if username is not None and request.app['websockets'].get(username) is not None:
-                    for ws in request.app['websockets'].values():
+                if username is not None and request.app['websockets']['Global'].get(username) is not None:
+                    for ws in request.app['websockets']['Global'].values():
                         if ws is not ws_current:
                             await ws.send_json(
                                 {'action': 'chat_message',
@@ -43,8 +43,7 @@ async def index(request):
                 await disconnect(request, username)
 
             elif action == 'user_list':
-                user_list = request.app['websockets'].keys()
-                await current_websocket.send_json(user_list)
+                await current_websocket.send_json(request.app['user_list'])
 
         else:
             break
@@ -55,24 +54,27 @@ async def index(request):
 
 
 async def connect(request, ws_current, username):
-    log.info('%s connected', username)
-
-    if request.app['websockets'].get(username):
-        return ws_current
-    else:
-        for ws in request.app['websockets'].values():
+    if username not in request.app['user_list']:
+        log.info('%s connected', username)
+        for ws in request.app['websockets']['Global'].values():
             await ws.send_json({'action': 'connect',
                                 'user': username,
                                 'datetime': datetime.now().strftime('%d/%m/%y %H:%M:%S')})
-        request.app['websockets'][username] = ws_current
+        request.app['websockets']['Global'][username] = ws_current
+        request.app['user_list'].append(username)
 
 
 async def disconnect(request, username):
-    if username is not None and request.app['websockets'].get(username) is not None:
-        del request.app['websockets'][username]
+    if username is not None and username not in request.app['user_list']:
+        del request.app['websockets']['Global'][username]
 
         log.info('%s disconnected.', username)
-        for ws in request.app['websockets'].values():
+        for ws in request.app['websockets']['Global'].values():
             await ws.send_json({'action': 'disconnect',
                                 'user': username,
                                 'datetime': datetime.now().strftime('%d/%m/%y %H:%M:%S')})
+        request.app['user_list'].pop(username)
+
+
+async def join():
+    pass

@@ -8,5 +8,4 @@ if __name__ == "__main__":
     app = QApplication([])
     main = Home(app.primaryScreen().size(), BASE_PATH)
     main.show()
-    main.start_chat()
     app.exec()

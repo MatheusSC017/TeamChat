@@ -5,10 +5,16 @@ from aiohttp import web
 from views import index
 
 
+rooms = {
+    "Global": {},
+}
+
+
 async def init_app():
     app = web.Application()
 
-    app['websockets'] = {}
+    app['websockets'] = rooms
+    app['user_list'] = []
 
     app.router.add_get('/', index)
 
@@ -18,7 +24,7 @@ async def init_app():
 
 
 async def shutdown(app):
-    for ws in app['websockets'].values():
+    for ws in app['websockets']['Global'].values():
         await ws.close()
     app['websockets'].clear()
 
