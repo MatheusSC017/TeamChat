@@ -42,6 +42,9 @@ async def index(request):
             elif action == 'disconnect':
                 await disconnect(request, username)
 
+            elif action == 'get_rooms':
+                await get_rooms(request, ws_current)
+
             elif action == 'user_list':
                 await current_websocket.send_json(request.app['user_list'])
 
@@ -65,7 +68,7 @@ async def connect(request, ws_current, username):
 
 
 async def disconnect(request, username):
-    if username is not None and username not in request.app['user_list']:
+    if username is not None and username in request.app['user_list']:
         del request.app['websockets']['Global'][username]
 
         log.info('%s disconnected.', username)
@@ -73,7 +76,22 @@ async def disconnect(request, username):
             await ws.send_json({'action': 'disconnect',
                                 'user': username,
                                 'datetime': datetime.now().strftime('%d/%m/%y %H:%M:%S')})
-        request.app['user_list'].pop(username)
+        request.app['user_list'].pop(request.app['user_list'].index(username))
+
+
+async def get_rooms(request, ws):
+    rooms = list(request.app['websockets'].keys())
+    rooms.pop(rooms.index('Global'))
+    await ws.send_json({'action': 'get_rooms',
+                        'rooms': rooms})
+
+
+async def get_sub_rooms():
+    pass
+
+
+async def get_user():
+    pass
 
 
 async def join():

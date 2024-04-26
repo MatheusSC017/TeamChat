@@ -34,9 +34,10 @@ class Home(QMainWindow):
         self.initUI()
         self.setStyleCSS(base_path / "static/css/style.css")
 
-        self.message_handler = chat.MessageHandler()
-        self.message_handler.messageReceived.connect(self.on_message_received)
-        self.chat_thread = Thread(target=asyncio.run, args=(self.message_handler.handler(),))
+        self.chat_handler = chat.ChatHandler()
+        self.chat_handler.messageReceived.connect(self.on_message_received)
+        self.chat_handler.setRooms.connect(self.get_channels)
+        self.chat_thread = Thread(target=asyncio.run, args=(self.chat_handler.handler(),))
 
     def setStyleCSS(self, css_file_path):
         with open(css_file_path, "r") as css:
@@ -117,7 +118,6 @@ class Home(QMainWindow):
 
         # Channels
         self.channels = QVBoxLayout()
-        self.get_channels()
 
         container = QWidget()
         container.setContentsMargins(0, 0, 0, 0)
@@ -178,14 +178,11 @@ class Home(QMainWindow):
         self.message.setEnabled(False)
         self.button_send_message.setEnabled(False)
 
-    def get_channels(self):
-        for i in range(30):
-            channel_info = {
-                'name': faker_instance.first_name(),
-                'protected': choice([True, False])
-            }
-
-            channel_button = buttons.PushButtonChannel(channel_info['name'], channel_info['protected'], self.base_path)
+    @pyqtSlot(list)
+    def get_channels(self, rooms):
+        for room in rooms:
+            channel_button = buttons.PushButtonChannel(room, False, self.base_path)
+            # channel_button = buttons.PushButtonChannel(channel_info['name'], channel_info['protected'], self.base_path)
             self.channels.addWidget(channel_button)
 
     def get_sub_channel(self, name):

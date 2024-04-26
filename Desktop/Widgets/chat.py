@@ -2,7 +2,6 @@ from PyQt6.QtWidgets import QWidget
 from PyQt6.QtCore import pyqtSignal
 from aiohttp import ClientSession
 from aiohttp.http_websocket import WSMessage
-from aiohttp import ClientWebSocketResponse
 from aiohttp.web import WSMsgType
 from dotenv import load_dotenv
 from datetime import datetime
@@ -17,8 +16,9 @@ PORT = os.environ.get("PORT")
 SSL = bool(os.environ.get("SSL"))
 
 
-class MessageHandler(QWidget):
+class ChatHandler(QWidget):
     messageReceived = pyqtSignal(str)
+    setRooms = pyqtSignal(list)
     websocket = None
     user = None
 
@@ -48,8 +48,13 @@ class MessageHandler(QWidget):
         await self.websocket.send_json({'action': 'connect',
                                         'user': self.user})
 
+        await self.get_rooms()
+
     async def disconnect(self) -> None:
         await self.websocket.send_json({'action': 'disconnect', })
+
+    async def get_rooms(self) -> None:
+        await self.websocket.send_json({'action': 'get_rooms'})
 
     async def send_input_message(self, message: str) -> None:
         await self.websocket.send_json({'action': 'chat_message',
@@ -65,8 +70,13 @@ class MessageHandler(QWidget):
                     action = message_json.get('action')
                     if action == 'connect':
                         self.messageReceived.emit(f'{message_json["datetime"]} - {message_json["user"]} connected')
+
                     elif action == 'disconnect':
                         self.messageReceived.emit(f'{message_json["datetime"]} - {message_json["user"]} disconnected')
+
+                    elif action == 'get_rooms':
+                        self.setRooms.emit(message_json["rooms"])
+
                     elif action == 'chat_message':
                         self.messageReceived.emit(f'{message_json["datetime"]} - '
                                                   f'{message_json["user"]}: {message_json["message"]}')

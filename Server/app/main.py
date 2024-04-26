@@ -7,6 +7,25 @@ from views import index
 
 rooms = {
     "Global": {},
+    "League of Legends": {
+        "Arena": {},
+        "ARAM": {},
+        "Clash": {},
+    },
+    "Age of empires III": {
+        "Duel": {},
+        "Casual Games": {},
+        "Ranked": {},
+    },
+    "Age of mitology": {
+        "Duel": {},
+        "Casual Games": {},
+    },
+    "Lethal Company": {
+        "Team 1": {},
+        "Team 2": {},
+        "Team 3": {},
+    }
 }
 
 
