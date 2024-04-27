@@ -42,8 +42,11 @@ async def index(request):
             elif action == 'disconnect':
                 await disconnect(request, username)
 
-            elif action == 'get_rooms':
-                await get_rooms(request, ws_current)
+            elif action == 'get_channels':
+                await get_channels(request, ws_current)
+
+            elif action == 'get_sub_channels':
+                await get_sub_channels(request, ws_current, message_json.get('channel'))
 
             elif action == 'user_list':
                 await current_websocket.send_json(request.app['user_list'])
@@ -79,15 +82,17 @@ async def disconnect(request, username):
         request.app['user_list'].pop(request.app['user_list'].index(username))
 
 
-async def get_rooms(request, ws):
-    rooms = list(request.app['websockets'].keys())
-    rooms.pop(rooms.index('Global'))
-    await ws.send_json({'action': 'get_rooms',
-                        'rooms': rooms})
+async def get_channels(request, ws):
+    channels = list(request.app['websockets'].keys())
+    channels.pop(channels.index('Global'))
+    await ws.send_json({'action': 'get_channels',
+                        'channels': channels})
 
 
-async def get_sub_rooms():
-    pass
+async def get_sub_channels(request, ws, channel):
+    sub_channels = list(request.app['websockets'][channel].keys())
+    await ws.send_json({'action': 'get_sub_channels',
+                        'sub_channels': sub_channels})
 
 
 async def get_user():

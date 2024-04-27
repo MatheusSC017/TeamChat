@@ -18,7 +18,6 @@ from threading import Thread
 from datetime import datetime
 import faker
 import asyncio
-from random import choice
 from Widgets import buttons, chat
 faker_instance = faker.Faker()
 
@@ -32,11 +31,12 @@ class Home(QMainWindow):
 
         self.settings(screen_size)
         self.initUI()
-        self.setStyleCSS(base_path / "static/css/style.css")
+        self.setStyleCSS(base_path / "static/css/main.css")
 
         self.chat_handler = chat.ChatHandler()
         self.chat_handler.messageReceived.connect(self.on_message_received)
-        self.chat_handler.setRooms.connect(self.get_channels)
+        self.chat_handler.setChannels.connect(self.set_channels)
+        self.chat_handler.setSubChannels.connect(self.set_sub_channels)
         self.chat_thread = Thread(target=asyncio.run, args=(self.chat_handler.handler(),))
 
     def setStyleCSS(self, css_file_path):
@@ -116,7 +116,6 @@ class Home(QMainWindow):
         header.addWidget(title)
         header.addLayout(header_subpartition)
 
-        # Channels
         self.channels = QVBoxLayout()
 
         container = QWidget()
@@ -130,10 +129,6 @@ class Home(QMainWindow):
         # Users
         self.group_channel_layout = QVBoxLayout()
         self.group_channel_layout.setContentsMargins(20, 10, 10, 10)
-
-        self.get_sub_channel("Sub-Channel")
-        self.get_sub_channel("Sub-Channel 2")
-        self.get_sub_channel("Sub-Channel 3")
 
         group_channel = QGroupBox("Channel opened")
         group_channel.setLayout(self.group_channel_layout)
@@ -170,7 +165,7 @@ class Home(QMainWindow):
         self.button_send_message.setEnabled(True)
 
     def end_chat(self):
-        asyncio.run(self.message_handler.disconnect())
+        asyncio.run(self.chat_handler.disconnect())
         self.chat_thread.kill = True
         self.connected = False
         self.connect_action.setText('Connect')
@@ -178,23 +173,34 @@ class Home(QMainWindow):
         self.message.setEnabled(False)
         self.button_send_message.setEnabled(False)
 
+    def get_channels(self):
+        pass
+
     @pyqtSlot(list)
-    def get_channels(self, rooms):
-        for room in rooms:
-            channel_button = buttons.PushButtonChannel(room, False, self.base_path)
-            # channel_button = buttons.PushButtonChannel(channel_info['name'], channel_info['protected'], self.base_path)
+    def set_channels(self, channels):
+        for channel in channels:
+            channel_button = buttons.PushButtonChannel(channel, False, self.base_path)
+            channel_button.clicked.connect(self.get_sub_channels)
             self.channels.addWidget(channel_button)
 
-    def get_sub_channel(self, name):
-        group_sub_channel_layout = QVBoxLayout()
-        group_sub_channel_layout.setContentsMargins(30, 5, 5, 5)
+    def get_sub_channels(self):
+        clicked_button = self.sender()
+        asyncio.run(self.chat_handler.get_sub_channels(channel=clicked_button.channel_name.text()))
 
-        self.get_users(group_sub_channel_layout)
+    @pyqtSlot(list)
+    def set_sub_channels(self, sub_channels):
+        self.clear_layout(self.group_channel_layout)
 
-        group_sub_channel = QGroupBox(name)
-        group_sub_channel.setLayout(group_sub_channel_layout)
+        for sub_channel in sub_channels:
+            group_sub_channel_layout = QVBoxLayout()
+            group_sub_channel_layout.setContentsMargins(30, 5, 5, 5)
 
-        self.group_channel_layout.addWidget(group_sub_channel)
+            self.get_users(group_sub_channel_layout)
+
+            group_sub_channel = QGroupBox(sub_channel)
+            group_sub_channel.setLayout(group_sub_channel_layout)
+
+            self.group_channel_layout.addWidget(group_sub_channel)
 
     def get_users(self, layout):
         layout.addWidget(QLabel(faker_instance.first_name()))
@@ -204,12 +210,20 @@ class Home(QMainWindow):
         layout.addWidget(QLabel(faker_instance.first_name()))
 
     def send_message(self):
-        asyncio.run(self.message_handler.send_input_message(self.message.text()))
+        asyncio.run(self.chat_handler.send_input_message(self.message.text()))
         self.chat.setPlainText(f"{self.chat.toPlainText()}\n"
-                               f"{datetime.now().strftime('%d/%m/%y %H:%M:%S')} - {self.message_handler.user}: "
+                               f"{datetime.now().strftime('%d/%m/%y %H:%M:%S')} - {self.chat_handler.user}: "
                                f"{self.message.text()}")
         self.message.clear()
 
     @pyqtSlot(str)
     def on_message_received(self, message):
         self.chat.append(message)
+
+    @staticmethod
+    def clear_layout(layout):
+        for i in reversed(range(layout.count())):
+            item = layout.itemAt(i)
+            widget = item.widget()
+            widget.setParent(None)
+            layout.removeWidget(widget)

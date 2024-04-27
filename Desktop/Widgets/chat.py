@@ -18,7 +18,8 @@ SSL = bool(os.environ.get("SSL"))
 
 class ChatHandler(QWidget):
     messageReceived = pyqtSignal(str)
-    setRooms = pyqtSignal(list)
+    setChannels = pyqtSignal(list)
+    setSubChannels = pyqtSignal(list)
     websocket = None
     user = None
 
@@ -48,13 +49,16 @@ class ChatHandler(QWidget):
         await self.websocket.send_json({'action': 'connect',
                                         'user': self.user})
 
-        await self.get_rooms()
+        await self.get_channels()
 
     async def disconnect(self) -> None:
         await self.websocket.send_json({'action': 'disconnect', })
 
-    async def get_rooms(self) -> None:
-        await self.websocket.send_json({'action': 'get_rooms'})
+    async def get_channels(self) -> None:
+        await self.websocket.send_json({'action': 'get_channels'})
+
+    async def get_sub_channels(self, channel: str) -> None:
+        await self.websocket.send_json(({'action': 'get_sub_channels', 'channel': channel}))
 
     async def send_input_message(self, message: str) -> None:
         await self.websocket.send_json({'action': 'chat_message',
@@ -74,8 +78,11 @@ class ChatHandler(QWidget):
                     elif action == 'disconnect':
                         self.messageReceived.emit(f'{message_json["datetime"]} - {message_json["user"]} disconnected')
 
-                    elif action == 'get_rooms':
-                        self.setRooms.emit(message_json["rooms"])
+                    elif action == 'get_channels':
+                        self.setChannels.emit(message_json["channels"])
+
+                    elif action == 'get_sub_channels':
+                        self.setSubChannels.emit(message_json["sub_channels"])
 
                     elif action == 'chat_message':
                         self.messageReceived.emit(f'{message_json["datetime"]} - '
