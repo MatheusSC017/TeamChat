@@ -187,27 +187,24 @@ class Home(QMainWindow):
         clicked_button = self.sender()
         asyncio.run(self.chat_handler.get_sub_channels(channel=clicked_button.channel_name.text()))
 
-    @pyqtSlot(list)
+    @pyqtSlot(dict)
     def set_sub_channels(self, sub_channels):
         self.clear_layout(self.group_channel_layout)
 
-        for sub_channel in sub_channels:
+        for sub_channel, users in sub_channels.items():
             group_sub_channel_layout = QVBoxLayout()
             group_sub_channel_layout.setContentsMargins(30, 5, 5, 5)
 
-            self.get_users(group_sub_channel_layout)
+            self.get_users(group_sub_channel_layout, users)
 
             group_sub_channel = QGroupBox(sub_channel)
             group_sub_channel.setLayout(group_sub_channel_layout)
 
             self.group_channel_layout.addWidget(group_sub_channel)
 
-    def get_users(self, layout):
-        layout.addWidget(QLabel(faker_instance.first_name()))
-        layout.addWidget(QLabel(faker_instance.first_name()))
-        layout.addWidget(QLabel(faker_instance.first_name()))
-        layout.addWidget(QLabel(faker_instance.first_name()))
-        layout.addWidget(QLabel(faker_instance.first_name()))
+    def get_users(self, layout, users):
+        for user in users:
+            layout.addWidget(QLabel(user))
 
     def send_message(self):
         asyncio.run(self.chat_handler.send_input_message(self.message.text()))

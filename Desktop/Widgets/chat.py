@@ -19,7 +19,7 @@ SSL = bool(os.environ.get("SSL"))
 class ChatHandler(QWidget):
     messageReceived = pyqtSignal(str)
     setChannels = pyqtSignal(list)
-    setSubChannels = pyqtSignal(list)
+    setSubChannels = pyqtSignal(dict)
     websocket = None
     user = None
 

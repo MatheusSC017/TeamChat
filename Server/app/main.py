@@ -8,7 +8,11 @@ from views import index
 rooms = {
     "Global": {},
     "League of Legends": {
-        "Arena": {},
+        "Arena": {
+            "Teste": None,
+            "Teste 2": None,
+            "Teste 3": None
+        },
         "ARAM": {},
         "Clash": {},
     },

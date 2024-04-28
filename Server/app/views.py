@@ -91,13 +91,10 @@ async def get_channels(request, ws):
 
 async def get_sub_channels(request, ws, channel):
     sub_channels = list(request.app['websockets'][channel].keys())
+    sub_channels = {sub_channel: list(request.app['websockets'][channel][sub_channel].keys())
+                    for sub_channel in sub_channels}
     await ws.send_json({'action': 'get_sub_channels',
                         'sub_channels': sub_channels})
-
-
-async def get_user():
-    pass
-
 
 async def join():
     pass
