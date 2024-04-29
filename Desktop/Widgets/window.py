@@ -216,6 +216,7 @@ class Home(QMainWindow):
         self.sub_channel = list(sub_channels.keys())[0]
         asyncio.run(self.chat_handler.join(channel=self.channel, sub_channel=self.sub_channel))
         self.sub_channels_layouts[(self.channel, self.sub_channel)].addWidget(QLabel(self.chat_handler.user))
+
     def set_users(self, layout, users):
         for user in users:
             layout.addWidget(QLabel(user))

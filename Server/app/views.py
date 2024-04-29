@@ -25,15 +25,11 @@ async def index(request):
             action = message_json.get('action')
 
             if action == 'chat_message':
-                if username is not None and request.app['websockets']['Global'].get(username) is not None:
-                    for ws in request.app['websockets']['Global'].values():
-                        if ws is not ws_current:
-                            await ws.send_json(
-                                {'action': 'chat_message',
-                                 'user': username,
-                                 'datetime': message_json.get('datetime'),
-                                 'message': message_json.get('message')}
-                            )
+                await chat_message(request,
+                                   ws_current,
+                                   username,
+                                   message_json.get('datetime'),
+                                   message_json.get('message'))
 
             elif action == 'connect':
                 username = message_json.get('user')
@@ -119,3 +115,16 @@ async def join(request, ws, username, channel, sub_channel):
                             'channel': channel,
                             'sub_channel': sub_channel,
                             'datetime': datetime.now().strftime('%d/%m/%y %H:%M:%S')})
+
+
+async def chat_message(request, ws_current, username, datetime, message):
+    channel, sub_channel = request.app['user_list'].get(username)
+    if username is not None and request.app['websockets'][channel][sub_channel].get(username) is not None:
+        for ws in request.app['websockets'][channel][sub_channel].values():
+            if ws is not ws_current:
+                await ws.send_json(
+                    {'action': 'chat_message',
+                     'user': username,
+                     'datetime': datetime,
+                     'message': message}
+                )
