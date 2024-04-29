@@ -1,3 +1,5 @@
+import time
+
 from PyQt6.QtWidgets import (
     QMainWindow,
     QWidget,
@@ -28,6 +30,10 @@ class Home(QMainWindow):
     def __init__(self, screen_size, base_path):
         super().__init__()
         self.base_path = base_path
+
+        self.channel = None
+        self.sub_channel = None
+        self.sub_channels_layouts = {}
 
         self.settings(screen_size)
         self.initUI()
@@ -173,8 +179,11 @@ class Home(QMainWindow):
         self.message.setEnabled(False)
         self.button_send_message.setEnabled(False)
 
-    def get_channels(self):
+    def join(self):
         pass
+
+    def get_channels(self):
+        asyncio.run(self.chat_handler.get_channels())
 
     @pyqtSlot(list)
     def set_channels(self, channels):
@@ -185,7 +194,8 @@ class Home(QMainWindow):
 
     def get_sub_channels(self):
         clicked_button = self.sender()
-        asyncio.run(self.chat_handler.get_sub_channels(channel=clicked_button.channel_name.text()))
+        self.channel = clicked_button.channel_name.text()
+        asyncio.run(self.chat_handler.get_sub_channels(channel=self.channel))
 
     @pyqtSlot(dict)
     def set_sub_channels(self, sub_channels):
@@ -194,15 +204,19 @@ class Home(QMainWindow):
         for sub_channel, users in sub_channels.items():
             group_sub_channel_layout = QVBoxLayout()
             group_sub_channel_layout.setContentsMargins(30, 5, 5, 5)
+            self.sub_channels_layouts[(self.channel, sub_channel)] = group_sub_channel_layout
 
-            self.get_users(group_sub_channel_layout, users)
+            self.set_users(group_sub_channel_layout, users)
 
             group_sub_channel = QGroupBox(sub_channel)
             group_sub_channel.setLayout(group_sub_channel_layout)
 
             self.group_channel_layout.addWidget(group_sub_channel)
 
-    def get_users(self, layout, users):
+        self.sub_channel = list(sub_channels.keys())[0]
+        asyncio.run(self.chat_handler.join(channel=self.channel, sub_channel=self.sub_channel))
+        self.sub_channels_layouts[(self.channel, self.sub_channel)].addWidget(QLabel(self.chat_handler.user))
+    def set_users(self, layout, users):
         for user in users:
             layout.addWidget(QLabel(user))
 

@@ -6,13 +6,11 @@ from views import index
 
 
 rooms = {
-    "Global": {},
+    "Global": {
+        "Logs": {}
+    },
     "League of Legends": {
-        "Arena": {
-            "Teste": None,
-            "Teste 2": None,
-            "Teste 3": None
-        },
+        "Arena": {},
         "ARAM": {},
         "Clash": {},
     },
@@ -37,7 +35,7 @@ async def init_app():
     app = web.Application()
 
     app['websockets'] = rooms
-    app['user_list'] = []
+    app['user_list'] = {}
 
     app.router.add_get('/', index)
 
@@ -47,8 +45,10 @@ async def init_app():
 
 
 async def shutdown(app):
-    for ws in app['websockets']['Global'].values():
-        await ws.close()
+    for channel in app['websockets'].keys():
+        for sub_channel in app['websockets'][channel].keys():
+            for ws in app['websockets'][channel][sub_channel].values():
+                await ws.close()
     app['websockets'].clear()
 
 

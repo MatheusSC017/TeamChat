@@ -22,6 +22,8 @@ class ChatHandler(QWidget):
     setSubChannels = pyqtSignal(dict)
     websocket = None
     user = None
+    channel = None
+    sub_channel = None
 
     async def handler(self) -> None:
         if HOST is None or PORT is None:
@@ -59,6 +61,9 @@ class ChatHandler(QWidget):
 
     async def get_sub_channels(self, channel: str) -> None:
         await self.websocket.send_json(({'action': 'get_sub_channels', 'channel': channel}))
+
+    async def join(self, channel: str, sub_channel: str):
+        await self.websocket.send_json(({'action': 'join', 'channel': channel, 'sub_channel': sub_channel}))
 
     async def send_input_message(self, message: str) -> None:
         await self.websocket.send_json({'action': 'chat_message',
