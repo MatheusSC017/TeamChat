@@ -1,9 +1,8 @@
 from PyQt6.QtWidgets import (
     QAbstractButton,
     QLabel,
-    QHBoxLayout,
+    QHBoxLayout
 )
-from PyQt6.QtCore import pyqtSignal
 from PyQt6.QtGui import QPixmap
 from PIL.ImageQt import ImageQt
 from PIL import Image
@@ -12,6 +11,10 @@ from PIL import Image
 class PushButtonChannel(QAbstractButton):
     def __init__(self, name, protected, base_path):
         super(PushButtonChannel, self).__init__()
+        self.initUI(name, protected, base_path)
+        self.setStyleCSS(base_path / "static/css/button.css")
+
+    def initUI(self, name, protected, base_path):
         self.setContentsMargins(0, 0, 0, 0)
 
         self.channel_name = QLabel(name)
@@ -35,6 +38,10 @@ class PushButtonChannel(QAbstractButton):
         channel.setObjectName("channel")
 
         self.setLayout(channel)
+
+    def setStyleCSS(self, css_file_path):
+        with open(css_file_path, "r") as css:
+            self.setStyleSheet(css.read())
 
     def paintEvent(self, a0, QPaintEvent=None):
         pass
