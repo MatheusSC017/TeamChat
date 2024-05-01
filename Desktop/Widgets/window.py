@@ -1,5 +1,3 @@
-import time
-
 from PyQt6.QtWidgets import (
     QMainWindow,
     QWidget,
@@ -180,7 +178,7 @@ class Home(QMainWindow):
         self.button_send_message.setEnabled(False)
 
     def join(self):
-        pass
+        asyncio.run(self.chat_handler.join(self.channel, self.sub_channel))
 
     def get_channels(self):
         asyncio.run(self.chat_handler.get_channels())
@@ -194,32 +192,24 @@ class Home(QMainWindow):
 
     def get_sub_channels(self):
         clicked_button = self.sender()
-        self.channel = clicked_button.channel_name.text()
-        asyncio.run(self.chat_handler.get_sub_channels(channel=self.channel))
+        if self.channel != clicked_button.channel_name.text():
+            self.channel = clicked_button.channel_name.text()
+            asyncio.run(self.chat_handler.get_sub_channels(channel=self.channel))
 
     @pyqtSlot(dict)
     def set_sub_channels(self, sub_channels):
         self.clear_layout(self.group_channel_layout)
+        self.sub_channels_layouts = {}
 
         for sub_channel, users in sub_channels.items():
-            group_sub_channel_layout = QVBoxLayout()
-            group_sub_channel_layout.setContentsMargins(30, 5, 5, 5)
-            self.sub_channels_layouts[(self.channel, sub_channel)] = group_sub_channel_layout
+            sub_channel_widget = buttons.PushButtonSubChannel(sub_channel, users, self.base_path)
+            self.sub_channels_layouts[(self.channel, sub_channel)] = sub_channel_widget
 
-            self.set_users(group_sub_channel_layout, users)
-
-            group_sub_channel = QGroupBox(sub_channel)
-            group_sub_channel.setLayout(group_sub_channel_layout)
-
-            self.group_channel_layout.addWidget(group_sub_channel)
+            self.group_channel_layout.addWidget(sub_channel_widget)
 
         self.sub_channel = list(sub_channels.keys())[0]
         asyncio.run(self.chat_handler.join(channel=self.channel, sub_channel=self.sub_channel))
-        self.sub_channels_layouts[(self.channel, self.sub_channel)].addWidget(QLabel(self.chat_handler.user))
-
-    def set_users(self, layout, users):
-        for user in users:
-            layout.addWidget(QLabel(user))
+        self.sub_channels_layouts[(self.channel, self.sub_channel)].user_layout.addWidget(QLabel(self.chat_handler.user))
 
     def send_message(self):
         asyncio.run(self.chat_handler.send_input_message(self.message.text()))

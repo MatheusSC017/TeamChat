@@ -1,7 +1,9 @@
 from PyQt6.QtWidgets import (
+    QWidget,
     QAbstractButton,
     QLabel,
-    QHBoxLayout
+    QHBoxLayout,
+    QVBoxLayout
 )
 from PyQt6.QtGui import QPixmap
 from PIL.ImageQt import ImageQt
@@ -10,7 +12,7 @@ from PIL import Image
 
 class PushButtonChannel(QAbstractButton):
     def __init__(self, name, protected, base_path):
-        super(PushButtonChannel, self).__init__()
+        super().__init__()
         self.initUI(name, protected, base_path)
         self.setStyleCSS(base_path / "static/css/button.css")
 
@@ -38,6 +40,38 @@ class PushButtonChannel(QAbstractButton):
         channel.setObjectName("channel")
 
         self.setLayout(channel)
+
+    def setStyleCSS(self, css_file_path):
+        with open(css_file_path, "r") as css:
+            self.setStyleSheet(css.read())
+
+    def paintEvent(self, a0, QPaintEvent=None):
+        pass
+
+
+class PushButtonSubChannel(QAbstractButton):
+    def __init__(self, name, users, base_path):
+        super().__init__()
+        self.initUI(name, users)
+        self.setStyleCSS(base_path / "static/css/button.css")
+
+    def initUI(self, name, users):
+        self.user_layout = QVBoxLayout()
+        self.set_users(self.user_layout, users)
+
+        user_list = QWidget()
+        user_list.setLayout(self.user_layout)
+
+        sub_channel = QVBoxLayout()
+        sub_channel.addWidget(QLabel(name))
+        sub_channel.addWidget(user_list)
+        sub_channel.setObjectName("sub_channel")
+
+        self.setLayout(sub_channel)
+
+    def set_users(self, layout, users):
+        for user in users:
+            layout.addWidget(QLabel(user))
 
     def setStyleCSS(self, css_file_path):
         with open(css_file_path, "r") as css:
