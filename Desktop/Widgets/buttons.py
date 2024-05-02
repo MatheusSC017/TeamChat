@@ -13,14 +13,16 @@ from PIL import Image
 class PushButtonChannel(QAbstractButton):
     def __init__(self, name, protected, base_path):
         super().__init__()
+        self.channel_name = name
+
         self.initUI(name, protected, base_path)
         self.setStyleCSS(base_path / "static/css/button.css")
 
     def initUI(self, name, protected, base_path):
         self.setContentsMargins(0, 0, 0, 0)
 
-        self.channel_name = QLabel(name)
-        self.channel_name.setFixedHeight(30)
+        channel_name = QLabel(name)
+        channel_name.setFixedHeight(30)
 
         padlock_icon = base_path / "static/images/padlock.png"
         open_padlock_icon = base_path / "static/images/open_padlock.png"
@@ -35,7 +37,7 @@ class PushButtonChannel(QAbstractButton):
         channel_protected.setFixedWidth(30)
 
         channel = QHBoxLayout()
-        channel.addWidget(self.channel_name)
+        channel.addWidget(channel_name)
         channel.addWidget(channel_protected)
         channel.setObjectName("channel")
 
@@ -52,6 +54,8 @@ class PushButtonChannel(QAbstractButton):
 class PushButtonSubChannel(QAbstractButton):
     def __init__(self, name, users, base_path):
         super().__init__()
+        self.sub_channel_name = name
+
         self.initUI(name, users)
         self.setStyleCSS(base_path / "static/css/button.css")
 
@@ -70,8 +74,11 @@ class PushButtonSubChannel(QAbstractButton):
         self.setLayout(sub_channel)
 
     def set_users(self, layout, users):
+        self.user_widgets = {}
+
         for user in users:
-            layout.addWidget(QLabel(user))
+            self.user_widgets[user] = QLabel(user)
+            layout.addWidget(self.user_widgets[user])
 
     def setStyleCSS(self, css_file_path):
         with open(css_file_path, "r") as css:
