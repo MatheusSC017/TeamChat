@@ -36,12 +36,8 @@ class Home(QMainWindow):
         self.settings(screen_size)
         self.initUI()
         self.setStyleCSS(base_path / "static/css/main.css")
+        self.create_chat()
 
-        self.chat_handler = chat.ChatHandler()
-        self.chat_handler.messageReceived.connect(self.on_message_received)
-        self.chat_handler.setChannels.connect(self.set_channels)
-        self.chat_handler.setSubChannels.connect(self.set_sub_channels)
-        self.chat_thread = Thread(target=asyncio.run, args=(self.chat_handler.handler(),))
 
     def setStyleCSS(self, css_file_path):
         with open(css_file_path, "r") as css:
@@ -57,6 +53,17 @@ class Home(QMainWindow):
         self.setGeometry(window_center_x, window_center_y, width, height)
 
     def initUI(self):
+        self.get_menu_ui()
+
+        self.master = QHBoxLayout()
+        self.master.addLayout(self.get_channels_ui(), 50)
+        self.master.addLayout(self.get_messages_ui(), 50)
+
+        central_widget = QWidget()
+        central_widget.setLayout(self.master)
+        self.setCentralWidget(central_widget)
+
+    def get_menu_ui(self):
         menubar = QMenuBar(self)
         self.setMenuBar(menubar)
 
@@ -68,13 +75,6 @@ class Home(QMainWindow):
 
         self.connect_action.triggered.connect(self.start_end_connection)
 
-        self.master = QHBoxLayout()
-        self.master.addLayout(self.get_channels_ui(), 50)
-        self.master.addLayout(self.get_messages_ui(), 50)
-
-        central_widget = QWidget()
-        central_widget.setLayout(self.master)
-        self.setCentralWidget(central_widget)
 
     def get_messages_ui(self):
         self.chat = QTextEdit()
@@ -153,6 +153,13 @@ class Home(QMainWindow):
         column.addWidget(self.users_scroll)
         return column
 
+    def create_chat(self):
+        self.chat_handler = chat.ChatHandler()
+        self.chat_handler.messageReceived.connect(self.on_message_received)
+        self.chat_handler.setChannels.connect(self.set_channels)
+        self.chat_handler.setSubChannels.connect(self.set_sub_channels)
+        self.chat_thread = Thread(target=asyncio.run, args=(self.chat_handler.handler(),))
+
     def closeEvent(self):
         if self.connected:
             self.end_chat()
@@ -189,7 +196,7 @@ class Home(QMainWindow):
             self.sub_channels_layouts[(self.channel, self.sub_channel)].user_widgets[self.chat_handler.user] = user_label
             self.sub_channels_layouts[(self.channel, old_sub_channel)].user_layout.removeWidget(user_label)
             self.sub_channels_layouts[(self.channel, self.sub_channel)].user_layout.addWidget(user_label)
-        
+
     def get_channels(self):
         asyncio.run(self.chat_handler.get_channels())
 

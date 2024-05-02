@@ -5,6 +5,7 @@ from aiohttp.http_websocket import WSMessage
 from aiohttp.web import WSMsgType
 from dotenv import load_dotenv
 from datetime import datetime
+import json
 import random
 import asyncio
 import os
@@ -74,7 +75,10 @@ class ChatHandler(QWidget):
     async def subscribe_to_messages(self) -> None:
         while True:
             async for message in self.websocket:
-                if isinstance(message, WSMessage) and message.type == WSMsgType.text:
+                try:
+                    if not isinstance(message, WSMessage) or message.type != WSMsgType.text:
+                        continue
+
                     message_json = message.json()
                     action = message_json.get('action')
                     if action == 'connect':
@@ -92,3 +96,9 @@ class ChatHandler(QWidget):
                     elif action == 'chat_message':
                         self.messageReceived.emit(f'{message_json["datetime"]} - '
                                                   f'{message_json["user"]}: {message_json["message"]}')
+
+                    else:
+                        print(f"Unknown action received: {action}")
+
+                except (json.JSONDecodeError, KeyError) as e:
+                    self.logger.error(f"Error processing message: {e}")
