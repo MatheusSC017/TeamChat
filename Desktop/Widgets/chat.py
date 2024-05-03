@@ -57,6 +57,9 @@ class ChatHandler(QWidget):
     async def disconnect(self) -> None:
         await self.websocket.send_json({'action': 'disconnect', })
 
+    async def get_user_list(self) -> None:
+        await self.websocket.send_json({'action': 'user_list', })
+
     async def get_channels(self) -> None:
         await self.websocket.send_json({'action': 'get_channels'})
 
@@ -73,32 +76,31 @@ class ChatHandler(QWidget):
                                         'datetime': datetime.now().strftime('%d/%m/%y %H:%M:%S')})
 
     async def subscribe_to_messages(self) -> None:
-        while True:
-            async for message in self.websocket:
-                try:
-                    if not isinstance(message, WSMessage) or message.type != WSMsgType.text:
-                        continue
+        async for message in self.websocket:
+            try:
+                if not isinstance(message, WSMessage) or message.type != WSMsgType.text:
+                    continue
 
-                    message_json = message.json()
-                    action = message_json.get('action')
-                    if action == 'connect':
-                        self.messageReceived.emit(f'{message_json["datetime"]} - {message_json["user"]} connected')
+                message_json = message.json()
+                action = message_json.get('action')
+                if action == 'connect':
+                    self.messageReceived.emit(f'{message_json["datetime"]} - {message_json["user"]} connected')
 
-                    elif action == 'disconnect':
-                        self.messageReceived.emit(f'{message_json["datetime"]} - {message_json["user"]} disconnected')
+                elif action == 'disconnect':
+                    self.messageReceived.emit(f'{message_json["datetime"]} - {message_json["user"]} disconnected')
 
-                    elif action == 'get_channels':
-                        self.setChannels.emit(message_json["channels"])
+                elif action == 'get_channels':
+                    self.setChannels.emit(message_json["channels"])
 
-                    elif action == 'get_sub_channels':
-                        self.setSubChannels.emit(message_json["sub_channels"])
+                elif action == 'get_sub_channels':
+                    self.setSubChannels.emit(message_json["sub_channels"])
 
-                    elif action == 'chat_message':
-                        self.messageReceived.emit(f'{message_json["datetime"]} - '
-                                                  f'{message_json["user"]}: {message_json["message"]}')
+                elif action == 'chat_message':
+                    self.messageReceived.emit(f'{message_json["datetime"]} - '
+                                              f'{message_json["user"]}: {message_json["message"]}')
 
-                    else:
-                        print(f"Unknown action received: {action}")
+                else:
+                    print(f"Unknown action received: {action}")
 
-                except (json.JSONDecodeError, KeyError) as e:
-                    self.logger.error(f"Error processing message: {e}")
+            except (json.JSONDecodeError, KeyError) as e:
+                self.logger.error(f"Error processing message: {e}")

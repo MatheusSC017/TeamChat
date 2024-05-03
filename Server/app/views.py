@@ -18,43 +18,39 @@ async def index(request):
 
     await ws_current.prepare(request)
 
-    while True:
-        message = await ws_current.receive()
+    try:
+        async for message in current_websocket:
+            if message.type == aiohttp.WSMsgType.text:
+                message_json = message.json()
+                action = message_json.get('action')
 
-        if message.type == aiohttp.WSMsgType.text:
-            message_json = message.json()
-            action = message_json.get('action')
+                if action == 'chat_message':
+                    await chat_message(request,
+                                       ws_current,
+                                       username,
+                                       message_json.get('datetime'),
+                                       message_json.get('message'))
 
-            if action == 'chat_message':
-                await chat_message(request,
-                                   ws_current,
-                                   username,
-                                   message_json.get('datetime'),
-                                   message_json.get('message'))
+                elif action == 'connect':
+                    username = message_json.get('user')
+                    await connect(request, ws_current, username)
 
-            elif action == 'connect':
-                username = message_json.get('user')
-                await connect(request, ws_current, username)
+                elif action == 'disconnect':
+                    await disconnect(request, ws_current, username)
 
-            elif action == 'disconnect':
-                await disconnect(request, ws_current, username)
+                elif action == 'get_channels':
+                    await get_channels(request, ws_current)
 
-            elif action == 'get_channels':
-                await get_channels(request, ws_current)
+                elif action == 'get_sub_channels':
+                    await get_sub_channels(request, ws_current, message_json.get('channel'))
 
-            elif action == 'get_sub_channels':
-                await get_sub_channels(request, ws_current, message_json.get('channel'))
+                elif action == 'join':
+                    await join(request, ws_current, username, message_json.get('channel'), message_json.get('sub_channel'))
 
-            elif action == 'join':
-                await join(request, ws_current, username, message_json.get('channel'), message_json.get('sub_channel'))
-
-            elif action == 'user_list':
-                await ws_current.send_json(list(request.app['user_list'].keys()))
-
-        else:
-            break
-
-    await disconnect(request, ws_current, username)
+                elif action == 'user_list':
+                    await ws_current.send_json(list(request.app['user_list'].keys()))
+    finally:
+        await disconnect(request, ws_current, username)
 
     return ws_current
 

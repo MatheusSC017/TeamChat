@@ -197,6 +197,8 @@ class Home(QMainWindow):
             self.sub_channels_layouts[(self.channel, old_sub_channel)].user_layout.removeWidget(user_label)
             self.sub_channels_layouts[(self.channel, self.sub_channel)].user_layout.addWidget(user_label)
 
+            self.chat.setPlainText(f"You have joined {self.channel} / {self.sub_channel}")
+
     def get_channels(self):
         asyncio.run(self.chat_handler.get_channels())
 
@@ -231,6 +233,8 @@ class Home(QMainWindow):
         user_label = QLabel(self.chat_handler.user)
         self.sub_channels_layouts[(self.channel, self.sub_channel)].user_widgets[self.chat_handler.user] = user_label
         self.sub_channels_layouts[(self.channel, self.sub_channel)].user_layout.addWidget(user_label)
+
+        self.chat.setPlainText(f"You have joined {self.channel} / {self.sub_channel}")
 
     def send_message(self):
         asyncio.run(self.chat_handler.send_input_message(self.message.text()))
