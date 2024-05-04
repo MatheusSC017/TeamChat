@@ -19,7 +19,7 @@ async def index(request):
     await ws_current.prepare(request)
 
     try:
-        async for message in current_websocket:
+        async for message in ws_current:
             if message.type == aiohttp.WSMsgType.text:
                 message_json = message.json()
                 action = message_json.get('action')
@@ -36,6 +36,7 @@ async def index(request):
                     await connect(request, ws_current, username)
 
                 elif action == 'disconnect':
+                    await ws_current.close()
                     await disconnect(request, ws_current, username)
 
                 elif action == 'get_channels':

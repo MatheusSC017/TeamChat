@@ -18,15 +18,16 @@ from threading import Thread
 from datetime import datetime
 import faker
 import asyncio
-from Widgets import buttons, chat
+from Widgets import buttons, chat, base
 faker_instance = faker.Faker()
 
 
-class Home(QMainWindow):
+class Home(QMainWindow, base.BaseWidget):
     connected = False
 
     def __init__(self, screen_size, base_path):
         super().__init__()
+        self.screen_size = screen_size
         self.base_path = base_path
 
         self.channel = None
@@ -35,22 +36,12 @@ class Home(QMainWindow):
 
         self.settings(screen_size)
         self.initUI()
-        self.setStyleCSS(base_path / "static/css/main.css")
+        self.setStyleCSS(base_path / "Static/CSS/main.css")
         self.create_chat()
-
-
-    def setStyleCSS(self, css_file_path):
-        with open(css_file_path, "r") as css:
-            self.setStyleSheet(css.read())
 
     def settings(self, screen_size):
         self.setWindowTitle("TeamChat")
         self.set_geometry_center(1000, 700, screen_size)
-
-    def set_geometry_center(self, width, height, screen_size):
-        window_center_x = (screen_size.width() - width) // 2
-        window_center_y = (screen_size.height() - height) // 2
-        self.setGeometry(window_center_x, window_center_y, width, height)
 
     def initUI(self):
         self.get_menu_ui()

@@ -8,15 +8,16 @@ from PyQt6.QtWidgets import (
 from PyQt6.QtGui import QPixmap
 from PIL.ImageQt import ImageQt
 from PIL import Image
+from Widgets.base import BaseWidget
 
 
-class PushButtonChannel(QAbstractButton):
+class PushButtonChannel(QAbstractButton, BaseWidget):
     def __init__(self, name, protected, base_path):
         super().__init__()
         self.channel_name = name
 
         self.initUI(name, protected, base_path)
-        self.setStyleCSS(base_path / "static/css/button.css")
+        self.setStyleCSS(base_path / "Static/CSS/button.css")
 
     def initUI(self, name, protected, base_path):
         self.setContentsMargins(0, 0, 0, 0)
@@ -24,8 +25,8 @@ class PushButtonChannel(QAbstractButton):
         channel_name = QLabel(name)
         channel_name.setFixedHeight(30)
 
-        padlock_icon = base_path / "static/images/padlock.png"
-        open_padlock_icon = base_path / "static/images/open_padlock.png"
+        padlock_icon = base_path / "Static/Images/padlock.png"
+        open_padlock_icon = base_path / "Static/Images/open_padlock.png"
 
         image = Image.open(padlock_icon if protected else open_padlock_icon)
         image = image.resize((15, 15))
@@ -43,21 +44,17 @@ class PushButtonChannel(QAbstractButton):
 
         self.setLayout(channel)
 
-    def setStyleCSS(self, css_file_path):
-        with open(css_file_path, "r") as css:
-            self.setStyleSheet(css.read())
-
     def paintEvent(self, a0, QPaintEvent=None):
         pass
 
 
-class PushButtonSubChannel(QAbstractButton):
+class PushButtonSubChannel(QAbstractButton, BaseWidget):
     def __init__(self, name, users, base_path):
         super().__init__()
         self.sub_channel_name = name
 
         self.initUI(name, users)
-        self.setStyleCSS(base_path / "static/css/button.css")
+        self.setStyleCSS(base_path / "Static/CSS/button.css")
 
     def initUI(self, name, users):
         self.user_layout = QVBoxLayout()
@@ -79,10 +76,6 @@ class PushButtonSubChannel(QAbstractButton):
         for user in users:
             self.user_widgets[user] = QLabel(user)
             layout.addWidget(self.user_widgets[user])
-
-    def setStyleCSS(self, css_file_path):
-        with open(css_file_path, "r") as css:
-            self.setStyleSheet(css.read())
 
     def paintEvent(self, a0, QPaintEvent=None):
         pass
