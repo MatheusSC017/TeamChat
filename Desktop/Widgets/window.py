@@ -16,9 +16,10 @@ from PyQt6.QtGui import QAction
 from PyQt6.QtCore import pyqtSlot
 from threading import Thread
 from datetime import datetime
+import time
 import faker
 import asyncio
-from Widgets import buttons, chat, base
+from Widgets import buttons, chat, base, connect
 faker_instance = faker.Faker()
 
 
@@ -44,6 +45,9 @@ class Home(QMainWindow, base.BaseWidget):
         self.set_geometry_center(1000, 700, screen_size)
 
     def initUI(self):
+        self.connect_window = connect.Connect(self.base_path, self.screen_size)
+        self.connect_window.connectRequest.connect(self.start_chat)
+
         self.get_menu_ui()
 
         self.master = QHBoxLayout()
@@ -156,15 +160,25 @@ class Home(QMainWindow, base.BaseWidget):
             self.end_chat()
 
     def start_end_connection(self):
-        self.start_chat() if not (self.connected) else self.end_chat()
+        self.create_connect_window() if not self.connected else self.end_chat()
 
-    def start_chat(self):
+    def create_connect_window(self):
+        self.connect_window.show()
+        self.setEnabled(False)
+
+    @pyqtSlot(str)
+    def start_chat(self, username):
         self.chat_thread.start()
+        while self.chat_handler.websocket is None:
+            time.sleep(0.1)
+        asyncio.run(self.chat_handler.connect(username))
         self.connected = True
         self.connect_action.setText('Disconnect')
         self.chat.setPlainText('You connected to the server')
         self.message.setEnabled(True)
         self.button_send_message.setEnabled(True)
+        self.setEnabled(True)
+        self.connect_window.close()
 
     def end_chat(self):
         asyncio.run(self.chat_handler.disconnect())

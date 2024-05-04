@@ -6,7 +6,6 @@ from aiohttp.web import WSMsgType
 from dotenv import load_dotenv
 from datetime import datetime
 import json
-import random
 import asyncio
 import os
 
@@ -17,7 +16,7 @@ PORT = os.environ.get("PORT")
 SSL = bool(os.environ.get("SSL"))
 
 
-class ChatHandler(QWidget):
+class ChatHandler(QWidget, object):
     messageReceived = pyqtSignal(str)
     setChannels = pyqtSignal(list)
     setSubChannels = pyqtSignal(dict)
@@ -34,8 +33,6 @@ class ChatHandler(QWidget):
             async with session.ws_connect(f'{HOST}:{PORT}', ssl=SSL) as ws:
                 self.websocket = ws
 
-                await self.connect()
-
                 read_message_task = asyncio.create_task(self.subscribe_to_messages())
 
                 done, pending = await asyncio.wait(
@@ -47,8 +44,8 @@ class ChatHandler(QWidget):
                 for task in pending:
                     task.cancel()
 
-    async def connect(self) -> None:
-        self.user = f'user{random.randint(1111111, 9999999)}'
+    async def connect(self, username) -> None:
+        self.user = username
         await self.websocket.send_json({'action': 'connect',
                                         'user': self.user})
 
