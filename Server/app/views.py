@@ -39,17 +39,19 @@ async def index(request):
                     await ws_current.close()
                     await disconnect(request, ws_current, username)
 
-                elif action == 'get_channels':
-                    await get_channels(request, ws_current)
+                else:
+                    if username in request.app['user_list'].keys():
+                        if action == 'get_channels':
+                            await get_channels(request, ws_current)
 
-                elif action == 'get_sub_channels':
-                    await get_sub_channels(request, ws_current, message_json.get('channel'))
+                        elif action == 'get_sub_channels':
+                            await get_sub_channels(request, ws_current, message_json.get('channel'))
 
-                elif action == 'join':
-                    await join(request, ws_current, username, message_json.get('channel'), message_json.get('sub_channel'))
+                        elif action == 'join':
+                            await join(request, ws_current, username, message_json.get('channel'), message_json.get('sub_channel'))
 
-                elif action == 'user_list':
-                    await ws_current.send_json(list(request.app['user_list'].keys()))
+                        elif action == 'user_list':
+                            await ws_current.send_json(list(request.app['user_list'].keys()))
     finally:
         await disconnect(request, ws_current, username)
 
@@ -57,7 +59,7 @@ async def index(request):
 
 
 async def connect(request, ws_current, username):
-    if username not in request.app['user_list'].keys():
+    if len(username) and username not in request.app['user_list'].keys():
         log.info('%s connected', username)
 
         content = {

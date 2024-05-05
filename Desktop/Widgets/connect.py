@@ -24,18 +24,18 @@ class Connect(BaseWidget):
         self.set_geometry_center(200, 100, screen_size)
 
     def initUI(self):
-        username_edit = QLineEdit()
+        self.username_edit = QLineEdit()
         connect_button = QPushButton("Conectar")
 
         connect_button.clicked.connect(self.connect_request)
 
         master = QVBoxLayout()
         master.addWidget(QLabel("Connection"))
-        master.addWidget(username_edit)
+        master.addWidget(self.username_edit)
         master.addWidget(connect_button)
 
         self.setLayout(master)
 
     def connect_request(self):
-        user = f'user{random.randint(1111111, 9999999)}'
+        user = self.username_edit.text()
         self.connectRequest.emit(user)
