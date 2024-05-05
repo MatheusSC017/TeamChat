@@ -70,7 +70,7 @@ class ChatHandler(QWidget, object):
         await self.websocket.send_json({'action': 'chat_message',
                                         'user': self.user,
                                         'message': message,
-                                        'datetime': datetime.now().strftime('%d/%m/%y %H:%M:%S')})
+                                        'datetime': datetime.now().strftime('%d/%m/%Y %H:%M:%S')})
 
     async def subscribe_to_messages(self) -> None:
         async for message in self.websocket:

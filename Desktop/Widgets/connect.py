@@ -5,36 +5,18 @@ from PyQt6.QtWidgets import (
     QVBoxLayout,
 )
 from PyQt6.QtCore import pyqtSignal
-from Widgets.base import BaseWidget
-import random
+from Widgets.base import BaseFormWindow
 
 
-class Connect(BaseWidget):
+class Connect(BaseFormWindow):
     connectRequest = pyqtSignal(str)
 
-    def __init__(self, base_path, screen_size):
-        super().__init__()
+    def __init__(self, *args, **kwargs):
+        self.window_name = "Conectar"
 
-        self.settings(screen_size)
-        self.initUI()
-        self.setStyleCSS(base_path / "Static/CSS/main.css")
+        super().__init__(*args, **kwargs)
 
-    def settings(self, screen_size):
-        self.setWindowTitle("Connect")
-        self.set_geometry_center(200, 100, screen_size)
-
-    def initUI(self):
-        self.username_edit = QLineEdit()
-        connect_button = QPushButton("Conectar")
-
-        connect_button.clicked.connect(self.connect_request)
-
-        master = QVBoxLayout()
-        master.addWidget(QLabel("Connection"))
-        master.addWidget(self.username_edit)
-        master.addWidget(connect_button)
-
-        self.setLayout(master)
+        self.connect_button.clicked.connect(self.connect_request)
 
     def connect_request(self):
         user = self.username_edit.text()

@@ -65,7 +65,7 @@ async def connect(request, ws_current, username):
         content = {
             'action': 'connect',
             'user': username,
-            'datetime': datetime.now().strftime('%d/%m/%y %H:%M:%S')
+            'datetime': datetime.now().strftime('%d/%m/%Y %H:%M:%S')
         }
         await global_broadcast(request, ws_current, content)
 
@@ -83,7 +83,7 @@ async def disconnect(request, ws_current, username):
         content = {
             'action': 'disconnect',
             'user': username,
-            'datetime': datetime.now().strftime('%d/%m/%y %H:%M:%S')
+            'datetime': datetime.now().strftime('%d/%m/%Y %H:%M:%S')
         }
         await global_broadcast(request, ws_current, content)
 
@@ -92,7 +92,6 @@ async def disconnect(request, ws_current, username):
 
 async def get_channels(request, ws_current):
     channels = list(request.app['websockets'].keys())
-    channels.pop(channels.index('Global'))
     await ws_current.send_json({'action': 'get_channels',
                                 'channels': channels})
 
@@ -122,7 +121,7 @@ async def join(request, ws_current, username, channel, sub_channel):
             'user': username,
             'channel': channel,
             'sub_channel': sub_channel,
-            'datetime': datetime.now().strftime('%d/%m/%y %H:%M:%S')
+            'datetime': datetime.now().strftime('%d/%m/%Y %H:%M:%S')
         }
         await local_broadcast(request, ws_current, channel, sub_channel, content)
 
