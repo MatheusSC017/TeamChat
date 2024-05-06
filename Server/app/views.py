@@ -7,6 +7,7 @@ import aiohttp
 from utils import local_broadcast, global_broadcast
 
 log = logging.getLogger(__name__)
+actions = {'connect', 'disconnect', 'chat_message', 'get_channels', 'get_sub_channels', 'join', 'user_list'}
 
 
 async def index(request):
@@ -24,34 +25,39 @@ async def index(request):
                 message_json = message.json()
                 action = message_json.get('action')
 
-                if action == 'chat_message':
-                    await chat_message(request,
-                                       ws_current,
-                                       username,
-                                       message_json.get('datetime'),
-                                       message_json.get('message'))
+                if action not in actions:
+                    continue
 
-                elif action == 'connect':
-                    username = message_json.get('user')
-                    await connect(request, ws_current, username)
-
-                elif action == 'disconnect':
-                    await ws_current.close()
-                    await disconnect(request, ws_current, username)
+                if username not in request.app['user_list'].keys():
+                    if action == 'connect':
+                        username = message_json.get('user')
+                        await connect(request, ws_current, username)
 
                 else:
-                    if username in request.app['user_list'].keys():
-                        if action == 'get_channels':
-                            await get_channels(request, ws_current)
 
-                        elif action == 'get_sub_channels':
-                            await get_sub_channels(request, ws_current, message_json.get('channel'))
+                    if action == 'chat_message':
+                        await chat_message(request,
+                                           ws_current,
+                                           username,
+                                           message_json.get('datetime'),
+                                           message_json.get('message'))
 
-                        elif action == 'join':
-                            await join(request, ws_current, username, message_json.get('channel'), message_json.get('sub_channel'))
+                    elif action == 'get_channels':
+                        await get_channels(request, ws_current)
 
-                        elif action == 'user_list':
-                            await ws_current.send_json(list(request.app['user_list'].keys()))
+                    elif action == 'get_sub_channels':
+                        await get_sub_channels(request, ws_current, message_json.get('channel'))
+
+                    elif action == 'user_list':
+                        await ws_current.send_json(list(request.app['user_list'].keys()))
+
+                    elif action == 'join':
+                        await join(request, ws_current, username, message_json.get('channel'), message_json.get('sub_channel'))
+
+                    elif action == 'disconnect':
+                        await ws_current.close()
+                        await disconnect(request, ws_current, username)
+
     finally:
         await disconnect(request, ws_current, username)
 

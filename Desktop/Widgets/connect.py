@@ -1,9 +1,3 @@
-from PyQt6.QtWidgets import (
-    QLabel,
-    QLineEdit,
-    QPushButton,
-    QVBoxLayout,
-)
 from PyQt6.QtCore import pyqtSignal
 from Widgets.base import BaseFormWindow
 
