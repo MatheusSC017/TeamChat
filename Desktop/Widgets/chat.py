@@ -17,6 +17,7 @@ SSL = bool(os.environ.get("SSL"))
 
 
 class ChatHandler(QWidget, object):
+    usersOnline = pyqtSignal(list)
     messageReceived = pyqtSignal(str)
     setChannels = pyqtSignal(list)
     setSubChannels = pyqtSignal(dict)
@@ -85,6 +86,9 @@ class ChatHandler(QWidget, object):
 
                 elif action == 'disconnect':
                     self.messageReceived.emit(f'{message_json["datetime"]} - {message_json["user"]} disconnected')
+
+                elif action == 'user_list':
+                    self.usersOnline.emit(message_json["user_list"])
 
                 elif action == 'get_channels':
                     self.setChannels.emit(message_json["channels"])

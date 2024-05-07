@@ -99,11 +99,11 @@ class Home(QMainWindow, base.BaseWidget):
         title = QLabel("TeamChat")
         title.setObjectName("title")
 
-        self.users_online = QLabel("512 users online")
+        self.users_online = QLabel("0 users online")
         self.users_online.setFixedHeight(30)
         self.users_online.setFixedWidth(150)
 
-        self.channels_availables = QLabel("127 channels")
+        self.channels_availables = QLabel("0 channels")
         self.channels_availables.setFixedHeight(30)
         self.channels_availables.setFixedWidth(150)
 
@@ -209,6 +209,8 @@ class Home(QMainWindow, base.BaseWidget):
 
     @pyqtSlot(list)
     def set_channels(self, channels):
+        self.channels_availables.setText(f'{len(channels)} channels')
+
         for channel in channels:
             channel_button = buttons.PushButtonChannel(channel, False, self.base_path)
             channel_button.clicked.connect(self.get_sub_channels)

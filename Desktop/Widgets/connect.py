@@ -11,6 +11,7 @@ class Connect(BaseFormWindow):
         super().__init__(*args, **kwargs)
 
         self.connect_button.clicked.connect(self.connect_request)
+        self.username_edit.returnPressed.connect(self.connect_request)
 
     def connect_request(self):
         user = self.username_edit.text()
