@@ -1,3 +1,5 @@
+import time
+
 from PyQt6.QtWidgets import QWidget
 from PyQt6.QtCore import pyqtSignal
 from aiohttp import ClientSession
@@ -35,9 +37,10 @@ class ChatHandler(QWidget, object):
                 self.websocket = ws
 
                 read_message_task = asyncio.create_task(self.subscribe_to_messages())
+                server_update_task = asyncio.create_task(self.get_updates())
 
                 done, pending = await asyncio.wait(
-                    [read_message_task, ], return_when=asyncio.FIRST_COMPLETED,
+                    [read_message_task, server_update_task], return_when=asyncio.FIRST_COMPLETED,
                 )
 
                 if not ws.closed:
@@ -55,6 +58,12 @@ class ChatHandler(QWidget, object):
 
     async def disconnect(self) -> None:
         await self.websocket.send_json({'action': 'disconnect', })
+
+    async def get_updates(self) -> None:
+        while True:
+            await asyncio.sleep(1)
+            await self.get_user_list()
+            await self.get_channels()
 
     async def get_user_list(self) -> None:
         await self.websocket.send_json({'action': 'user_list', })
