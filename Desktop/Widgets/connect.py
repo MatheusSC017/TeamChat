@@ -6,7 +6,7 @@ class Connect(BaseFormWindow):
     connectRequest = pyqtSignal(str)
 
     def __init__(self, *args, **kwargs):
-        self.window_name = "Conectar"
+        self.window_name = "Connect"
 
         super().__init__(*args, **kwargs)
 

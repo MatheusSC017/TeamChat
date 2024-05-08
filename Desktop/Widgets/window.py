@@ -31,8 +31,9 @@ class Home(QMainWindow, base.BaseWidget):
         self.screen_size = screen_size
         self.base_path = base_path
 
-        self.channel = None
-        self.sub_channel = None
+        self.channels = []
+        self.current_channel = None
+        self.current_sub_channel = None
         self.sub_channels_layouts = {}
 
         self.settings(screen_size)
@@ -66,7 +67,11 @@ class Home(QMainWindow, base.BaseWidget):
         menubar.addMenu(main_menu)
 
         self.connect_action = QAction("Connect", self)
+        self.update_username = QAction("Change Username")
+        self.update_username.setDisabled(True)
+
         main_menu.addAction(self.connect_action)
+        main_menu.addAction(self.update_username)
 
         self.connect_action.triggered.connect(self.start_end_connection)
 
@@ -115,25 +120,25 @@ class Home(QMainWindow, base.BaseWidget):
         header.addWidget(title)
         header.addLayout(header_subpartition)
 
-        self.channels = QVBoxLayout()
+        self.channels_layout = QVBoxLayout()
 
         container = QWidget()
         container.setContentsMargins(0, 0, 0, 0)
-        container.setLayout(self.channels)
+        container.setLayout(self.channels_layout)
 
         channels_scroll = QScrollArea()
         channels_scroll.setWidget(container)
         channels_scroll.setWidgetResizable(True)
 
         # Users
-        self.group_channel_layout = QVBoxLayout()
-        self.group_channel_layout.setContentsMargins(20, 10, 10, 10)
+        self.sub_channels_layout = QVBoxLayout()
+        self.sub_channels_layout.setContentsMargins(20, 10, 10, 10)
 
-        group_channel = QGroupBox("Channel opened")
-        group_channel.setLayout(self.group_channel_layout)
+        sub_channels = QGroupBox("Channel opened")
+        sub_channels.setLayout(self.sub_channels_layout)
 
         self.user_opened_channel = QVBoxLayout()
-        self.user_opened_channel.addWidget(group_channel)
+        self.user_opened_channel.addWidget(sub_channels)
 
         opened_channel = QWidget()
         opened_channel.setLayout(self.user_opened_channel)
@@ -172,42 +177,56 @@ class Home(QMainWindow, base.BaseWidget):
         self.chat_thread.start()
         while self.chat_handler.websocket is None:
             time.sleep(0.1)
-        asyncio.run(self.chat_handler.connect(username))
         self.connected = True
-        self.connect_action.setText('Disconnect')
-        self.chat.setPlainText('You connected to the server')
-        self.message.setEnabled(True)
-        self.button_send_message.setEnabled(True)
-        self.setEnabled(True)
-        self.connect_window.close()
+        asyncio.run(self.chat_handler.connect(username))
+
+        self.started_chat_ui()
 
     def end_chat(self):
         asyncio.run(self.chat_handler.disconnect())
         self.chat_thread.kill = True
         self.connected = False
+
+        self.ended_chat_ui()
+
+    def started_chat_ui(self):
+        self.connect_action.setText('Disconnect')
+        self.chat.setPlainText('You connected to the server')
+
+        self.update_username.setDisabled(False)
+        self.message.setEnabled(True)
+        self.button_send_message.setEnabled(True)
+        self.setEnabled(True)
+
+        self.connect_window.close()
+
+    def ended_chat_ui(self):
         self.connect_action.setText('Connect')
         self.chat.append('You have disconnected from the server')
+
+        self.update_username.setDisabled(True)
         self.message.setEnabled(False)
         self.button_send_message.setEnabled(False)
 
+
     def join(self):
         clicked_button = self.sender()
-        if self.sub_channel != clicked_button.sub_channel_name:
-            old_sub_channel = self.sub_channel
-            self.sub_channel = clicked_button.sub_channel_name
-            asyncio.run(self.chat_handler.join(self.channel, self.sub_channel))
+        if self.current_sub_channel != clicked_button.sub_channel_name:
+            old_sub_channel = self.current_sub_channel
+            self.current_sub_channel = clicked_button.sub_channel_name
+            asyncio.run(self.chat_handler.join(self.current_channel, self.current_sub_channel))
 
-            user_label = self.sub_channels_layouts[(self.channel, old_sub_channel)].user_widgets[self.chat_handler.user]
-            del self.sub_channels_layouts[(self.channel, old_sub_channel)].user_widgets[self.chat_handler.user]
-            self.sub_channels_layouts[(self.channel, self.sub_channel)].user_widgets[self.chat_handler.user] = user_label
-            self.sub_channels_layouts[(self.channel, old_sub_channel)].user_layout.removeWidget(user_label)
-            self.sub_channels_layouts[(self.channel, self.sub_channel)].user_layout.addWidget(user_label)
+            user_label = self.sub_channels_layouts[(self.current_channel, old_sub_channel)].user_widgets[self.chat_handler.user]
+            del self.sub_channels_layouts[(self.current_channel, old_sub_channel)].user_widgets[self.chat_handler.user]
+            self.sub_channels_layouts[(self.current_channel, self.current_sub_channel)].user_widgets[self.chat_handler.user] = user_label
+            self.sub_channels_layouts[(self.current_channel, old_sub_channel)].user_layout.removeWidget(user_label)
+            self.sub_channels_layouts[(self.current_channel, self.current_sub_channel)].user_layout.addWidget(user_label)
 
-            self.chat.setPlainText(f"You have joined {self.channel} / {self.sub_channel}")
+            self.chat.setPlainText(f"You have joined {self.current_channel} / {self.current_sub_channel}")
 
     @pyqtSlot(list)
     def set_users_online(self, users_online):
-        self.users_online.setText(f'{len(users_online)} users')
+        self.users_online.setText(f'{len(users_online)} users online')
 
     def get_channels(self):
         asyncio.run(self.chat_handler.get_channels())
@@ -216,37 +235,43 @@ class Home(QMainWindow, base.BaseWidget):
     def set_channels(self, channels):
         self.channels_availables.setText(f'{len(channels)} channels')
 
+        if self.channels == channels:
+            return
+
+        self.channels = channels
+        self.clear_layout(self.channels_layout)
+
         for channel in channels:
             channel_button = buttons.PushButtonChannel(channel, False, self.base_path)
             channel_button.clicked.connect(self.get_sub_channels)
-            self.channels.addWidget(channel_button)
+            self.channels_layout.addWidget(channel_button)
 
     def get_sub_channels(self):
         clicked_button = self.sender()
-        if self.channel != clicked_button.channel_name:
-            self.channel = clicked_button.channel_name
-            asyncio.run(self.chat_handler.get_sub_channels(channel=self.channel))
+        if self.current_channel != clicked_button.channel_name:
+            self.current_channel = clicked_button.channel_name
+            asyncio.run(self.chat_handler.get_sub_channels(channel=self.current_channel))
 
     @pyqtSlot(dict)
     def set_sub_channels(self, sub_channels):
-        self.clear_layout(self.group_channel_layout)
+        self.clear_layout(self.sub_channels_layout)
         self.sub_channels_layouts = {}
 
         for sub_channel, users in sub_channels.items():
             sub_channel_widget = buttons.PushButtonSubChannel(sub_channel, users, self.base_path)
             sub_channel_widget.clicked.connect(self.join)
-            self.sub_channels_layouts[(self.channel, sub_channel)] = sub_channel_widget
+            self.sub_channels_layouts[(self.current_channel, sub_channel)] = sub_channel_widget
 
-            self.group_channel_layout.addWidget(sub_channel_widget)
+            self.sub_channels_layout.addWidget(sub_channel_widget)
 
-        self.sub_channel = list(sub_channels.keys())[0]
-        asyncio.run(self.chat_handler.join(channel=self.channel, sub_channel=self.sub_channel))
+        self.current_sub_channel = list(sub_channels.keys())[0]
+        asyncio.run(self.chat_handler.join(channel=self.current_channel, sub_channel=self.current_sub_channel))
 
         user_label = QLabel(self.chat_handler.user)
-        self.sub_channels_layouts[(self.channel, self.sub_channel)].user_widgets[self.chat_handler.user] = user_label
-        self.sub_channels_layouts[(self.channel, self.sub_channel)].user_layout.addWidget(user_label)
+        self.sub_channels_layouts[(self.current_channel, self.current_sub_channel)].user_widgets[self.chat_handler.user] = user_label
+        self.sub_channels_layouts[(self.current_channel, self.current_sub_channel)].user_layout.addWidget(user_label)
 
-        self.chat.setPlainText(f"You have joined {self.channel} / {self.sub_channel}")
+        self.chat.setPlainText(f"You have joined {self.current_channel} / {self.current_sub_channel}")
 
     def send_message(self):
         asyncio.run(self.chat_handler.send_input_message(self.message.text()))
