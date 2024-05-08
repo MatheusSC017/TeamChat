@@ -50,6 +50,7 @@ class ChatHandler(QWidget, object):
         await self.websocket.send_json({'action': 'connect',
                                         'user': self.user})
 
+        await self.get_user_list()
         await self.get_channels()
 
     async def disconnect(self) -> None:

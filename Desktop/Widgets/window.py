@@ -153,6 +153,7 @@ class Home(QMainWindow, base.BaseWidget):
         self.chat_handler.messageReceived.connect(self.on_message_received)
         self.chat_handler.setChannels.connect(self.set_channels)
         self.chat_handler.setSubChannels.connect(self.set_sub_channels)
+        self.chat_handler.usersOnline.connect(self.set_users_online)
         self.chat_thread = Thread(target=asyncio.run, args=(self.chat_handler.handler(),))
 
     def closeEvent(self):
@@ -203,6 +204,10 @@ class Home(QMainWindow, base.BaseWidget):
             self.sub_channels_layouts[(self.channel, self.sub_channel)].user_layout.addWidget(user_label)
 
             self.chat.setPlainText(f"You have joined {self.channel} / {self.sub_channel}")
+
+    @pyqtSlot(list)
+    def set_users_online(self, users_online):
+        self.users_online.setText(f'{len(users_online)} users')
 
     def get_channels(self):
         asyncio.run(self.chat_handler.get_channels())
