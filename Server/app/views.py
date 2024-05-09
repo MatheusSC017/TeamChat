@@ -7,7 +7,8 @@ import aiohttp
 from utils import local_broadcast, global_broadcast
 
 log = logging.getLogger(__name__)
-actions = {'connect', 'disconnect', 'chat_message', 'get_channels', 'get_sub_channels', 'join', 'user_list'}
+actions = {'connect', 'disconnect', 'chat_message', 'get_channels', 'get_sub_channels', 'join', 'update_username',
+           'user_list'}
 
 
 async def index(request):
@@ -54,6 +55,11 @@ async def index(request):
 
                     elif action == 'join':
                         await join(request, ws_current, username, message_json.get('channel'), message_json.get('sub_channel'))
+
+                    elif action == 'update_username':
+                        new_username = await update_username(request, ws_current, username, message_json.get('username'))
+                        if new_username is not None:
+                            username = new_username
 
                     elif action == 'disconnect':
                         await ws_current.close()
@@ -133,6 +139,23 @@ async def join(request, ws_current, username, channel, sub_channel):
         await local_broadcast(request, ws_current, channel, sub_channel, content)
 
 
+async def update_username(request, ws_current, old_username, new_username):
+    if new_username is not None and \
+       old_username != new_username and \
+       new_username not in request.app['user_list'].keys():
+        log.info('%s updated your name to %s.', old_username, new_username)
+
+        channel, sub_channel = request.app['user_list'][old_username]
+
+        request.app['user_list'][new_username] = (channel, sub_channel)
+        del request.app['user_list'][old_username]
+
+        del request.app['websockets'][channel][sub_channel][old_username]
+        request.app['websockets'][channel][sub_channel][new_username] = ws_current
+
+        return new_username
+
+
 async def chat_message(request, ws_current, username, datetime, message):
     channel, sub_channel = request.app['user_list'].get(username)
     if username is not None and request.app['websockets'][channel][sub_channel].get(username) is not None:
@@ -142,4 +165,5 @@ async def chat_message(request, ws_current, username, datetime, message):
             'datetime': datetime,
             'message': message
         }
+
         await local_broadcast(request, ws_current, channel, sub_channel, content)

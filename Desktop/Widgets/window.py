@@ -19,7 +19,7 @@ from datetime import datetime
 import time
 import faker
 import asyncio
-from Widgets import buttons, chat, base, connect
+from Widgets import buttons, chat, base, connect, username
 faker_instance = faker.Faker()
 
 
@@ -49,6 +49,9 @@ class Home(QMainWindow, base.BaseWidget):
         self.connect_window = connect.Connect(self.base_path, self.screen_size)
         self.connect_window.connectRequest.connect(self.start_chat)
 
+        self.username_window = username.UpdateUsername(self.base_path, self.screen_size)
+        self.username_window.updateUsername.connect(self.update_username)
+
         self.get_menu_ui()
 
         self.master = QHBoxLayout()
@@ -67,13 +70,14 @@ class Home(QMainWindow, base.BaseWidget):
         menubar.addMenu(main_menu)
 
         self.connect_action = QAction("Connect", self)
-        self.update_username = QAction("Change Username")
-        self.update_username.setDisabled(True)
+        self.username_menu = QAction("Change Username")
+        self.username_menu.setDisabled(True)
 
         main_menu.addAction(self.connect_action)
-        main_menu.addAction(self.update_username)
+        main_menu.addAction(self.username_menu)
 
         self.connect_action.triggered.connect(self.start_end_connection)
+        self.username_menu.triggered.connect(self.update_username_ui)
 
 
     def get_messages_ui(self):
@@ -193,21 +197,21 @@ class Home(QMainWindow, base.BaseWidget):
         self.connect_action.setText('Disconnect')
         self.chat.setPlainText('You connected to the server')
 
-        self.update_username.setDisabled(False)
+        self.username_menu.setDisabled(False)
         self.message.setEnabled(True)
         self.button_send_message.setEnabled(True)
         self.setEnabled(True)
 
-        self.connect_window.close()
+        self.connect_window.username_edit.clear()
+        self.connect_window.hide()
 
     def ended_chat_ui(self):
         self.connect_action.setText('Connect')
         self.chat.append('You have disconnected from the server')
 
-        self.update_username.setDisabled(True)
+        self.username_menu.setDisabled(True)
         self.message.setEnabled(False)
         self.button_send_message.setEnabled(False)
-
 
     def join(self):
         clicked_button = self.sender()
@@ -223,6 +227,15 @@ class Home(QMainWindow, base.BaseWidget):
             self.sub_channels_layouts[(self.current_channel, self.current_sub_channel)].user_layout.addWidget(user_label)
 
             self.chat.setPlainText(f"You have joined {self.current_channel} / {self.current_sub_channel}")
+
+    def update_username_ui(self):
+        self.username_window.show()
+
+    @pyqtSlot(str)
+    def update_username(self, username):
+        asyncio.run(self.chat_handler.update_username(username))
+        self.username_window.username_edit.clear()
+        self.username_window.hide()
 
     @pyqtSlot(list)
     def set_users_online(self, users_online):

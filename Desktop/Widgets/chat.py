@@ -61,7 +61,7 @@ class ChatHandler(QWidget, object):
 
     async def get_updates(self) -> None:
         while True:
-            await asyncio.sleep(1)
+            await asyncio.sleep(2)
             await self.get_user_list()
             await self.get_channels()
 
@@ -72,14 +72,17 @@ class ChatHandler(QWidget, object):
         await self.websocket.send_json({'action': 'get_channels'})
 
     async def get_sub_channels(self, channel: str) -> None:
-        await self.websocket.send_json(({'action': 'get_sub_channels', 'channel': channel}))
+        await self.websocket.send_json({'action': 'get_sub_channels', 'channel': channel})
 
     async def join(self, channel: str, sub_channel: str):
-        await self.websocket.send_json(({'action': 'join', 'channel': channel, 'sub_channel': sub_channel}))
+        await self.websocket.send_json({'action': 'join', 'channel': channel, 'sub_channel': sub_channel})
+
+    async def update_username(self, username: str) -> None:
+        self.user = username
+        await self.websocket.send_json({'action': 'update_username', 'username': username})
 
     async def send_input_message(self, message: str) -> None:
         await self.websocket.send_json({'action': 'chat_message',
-                                        'user': self.user,
                                         'message': message,
                                         'datetime': datetime.now().strftime('%d/%m/%Y %H:%M:%S')})
 
