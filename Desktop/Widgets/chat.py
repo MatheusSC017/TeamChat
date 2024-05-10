@@ -100,6 +100,14 @@ class ChatHandler(QWidget, object):
                 elif action == 'disconnect':
                     self.messageReceived.emit(f'{message_json["datetime"]} - {message_json["user"]} disconnected')
 
+                elif action == 'join':
+                    self.messageReceived.emit(f'{message_json["user"]} joined {message_json["channel"]} / '
+                                              f'{message_json["sub_channel"]}')
+
+                elif action == 'update_username':
+                    self.messageReceived.emit(f'{message_json["old_username"]} updated your name to '
+                                              f'{message_json["new_username"]}')
+
                 elif action == 'user_list':
                     self.usersOnline.emit(message_json["user_list"])
 

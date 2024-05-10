@@ -153,6 +153,13 @@ async def update_username(request, ws_current, old_username, new_username):
         del request.app['websockets'][channel][sub_channel][old_username]
         request.app['websockets'][channel][sub_channel][new_username] = ws_current
 
+        content = {
+            'action': 'update_username',
+            'old_username': old_username,
+            'new_username': new_username,
+        }
+        await global_broadcast(request, ws_current, content)
+
         return new_username
 
 
