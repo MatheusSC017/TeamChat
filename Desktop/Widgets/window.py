@@ -32,8 +32,8 @@ class Home(QMainWindow, base.BaseWidget):
         self.base_path = base_path
 
         self.channels = []
-        self.current_channel = None
-        self.current_sub_channel = None
+        self.current_channel = 'Global'
+        self.current_sub_channel = 'Logs'
         self.sub_channels_layouts = {}
 
         self.settings(screen_size)
@@ -198,8 +198,6 @@ class Home(QMainWindow, base.BaseWidget):
         self.chat.setPlainText('You connected to the server')
 
         self.username_menu.setDisabled(False)
-        self.message.setEnabled(True)
-        self.button_send_message.setEnabled(True)
         self.setEnabled(True)
 
         self.connect_window.username_edit.clear()
@@ -227,6 +225,8 @@ class Home(QMainWindow, base.BaseWidget):
             self.sub_channels_layouts[(self.current_channel, self.current_sub_channel)].user_layout.addWidget(user_label)
 
             self.chat.setPlainText(f"You have joined {self.current_channel} / {self.current_sub_channel}")
+
+            self.enable_send_message()
 
     def update_username_ui(self):
         self.username_window.show()
@@ -263,6 +263,7 @@ class Home(QMainWindow, base.BaseWidget):
         clicked_button = self.sender()
         if self.current_channel != clicked_button.channel_name:
             self.current_channel = clicked_button.channel_name
+            self.enable_send_message()
             asyncio.run(self.chat_handler.get_sub_channels(channel=self.current_channel))
 
     @pyqtSlot(dict)
@@ -296,6 +297,14 @@ class Home(QMainWindow, base.BaseWidget):
     @pyqtSlot(str)
     def on_message_received(self, message):
         self.chat.append(message)
+
+    def enable_send_message(self):
+        if self.current_channel == 'Global':
+            self.message.setEnabled(False)
+            self.button_send_message.setEnabled(False)
+        else:
+            self.message.setEnabled(True)
+            self.button_send_message.setEnabled(True)
 
     @staticmethod
     def clear_layout(layout):

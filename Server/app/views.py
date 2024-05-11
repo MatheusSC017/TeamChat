@@ -81,6 +81,7 @@ async def connect(request, ws_current, username):
             'datetime': datetime.now().strftime('%d/%m/%Y %H:%M:%S')
         }
         await global_broadcast(request, ws_current, content)
+        await get_sub_channels(request, ws_current, 'Global')
 
         request.app['websockets']['Global']['Logs'][username] = ws_current
         request.app['user_list'][username] = ('Global', 'Logs')
