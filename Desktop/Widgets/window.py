@@ -19,7 +19,7 @@ from datetime import datetime
 import time
 import faker
 import asyncio
-from Widgets import buttons, chat, base, connect, username
+from Widgets import buttons, chat, base, connect, username, users
 faker_instance = faker.Faker()
 
 
@@ -48,9 +48,12 @@ class Home(QMainWindow, base.BaseWidget):
     def initUI(self):
         self.connect_window = connect.Connect(self.base_path, self.screen_size)
         self.connect_window.connectRequest.connect(self.start_chat)
+        self.connect_window.closeSign.connect(self.close_connect_window)
 
         self.username_window = username.UpdateUsername(self.base_path, self.screen_size)
         self.username_window.updateUsername.connect(self.update_username)
+
+        self.users_online_window = users.UsersOnline(self.base_path, self.screen_size)
 
         self.get_menu_ui()
 
@@ -69,16 +72,18 @@ class Home(QMainWindow, base.BaseWidget):
         main_menu = QMenu("Main", self)
         menubar.addMenu(main_menu)
 
-        self.connect_action = QAction("Connect", self)
+        self.connect_menu = QAction("Connect", self)
         self.username_menu = QAction("Change Username")
+        self.users_online_menu = QAction("Users")
         self.username_menu.setDisabled(True)
 
-        main_menu.addAction(self.connect_action)
+        main_menu.addAction(self.connect_menu)
         main_menu.addAction(self.username_menu)
+        main_menu.addAction(self.users_online_menu)
 
-        self.connect_action.triggered.connect(self.start_end_connection)
+        self.connect_menu.triggered.connect(self.start_end_connection)
         self.username_menu.triggered.connect(self.update_username_ui)
-
+        self.users_online_menu.triggered.connect(self.open_users_online_window)
 
     def get_messages_ui(self):
         self.chat = QTextEdit()
@@ -138,11 +143,11 @@ class Home(QMainWindow, base.BaseWidget):
         self.sub_channels_layout = QVBoxLayout()
         self.sub_channels_layout.setContentsMargins(20, 10, 10, 10)
 
-        sub_channels = QGroupBox("Channel opened")
-        sub_channels.setLayout(self.sub_channels_layout)
+        self.sub_channels_groupbox = QGroupBox("Global")
+        self.sub_channels_groupbox.setLayout(self.sub_channels_layout)
 
         self.user_opened_channel = QVBoxLayout()
-        self.user_opened_channel.addWidget(sub_channels)
+        self.user_opened_channel.addWidget(self.sub_channels_groupbox)
 
         opened_channel = QWidget()
         opened_channel.setLayout(self.user_opened_channel)
@@ -165,7 +170,8 @@ class Home(QMainWindow, base.BaseWidget):
         self.chat_handler.usersOnline.connect(self.set_users_online)
         self.chat_thread = Thread(target=asyncio.run, args=(self.chat_handler.handler(),))
 
-    def closeEvent(self):
+    def closeEvent(self, *args, **kwargs):
+        super().closeEvent(*args, **kwargs)
         if self.connected:
             self.end_chat()
 
@@ -194,7 +200,7 @@ class Home(QMainWindow, base.BaseWidget):
         self.ended_chat_ui()
 
     def started_chat_ui(self):
-        self.connect_action.setText('Disconnect')
+        self.connect_menu.setText('Disconnect')
         self.chat.setPlainText('You connected to the server')
 
         self.username_menu.setDisabled(False)
@@ -204,12 +210,15 @@ class Home(QMainWindow, base.BaseWidget):
         self.connect_window.hide()
 
     def ended_chat_ui(self):
-        self.connect_action.setText('Connect')
+        self.connect_menu.setText('Connect')
         self.chat.append('You have disconnected from the server')
 
         self.username_menu.setDisabled(True)
         self.message.setEnabled(False)
         self.button_send_message.setEnabled(False)
+
+    def close_connect_window(self):
+        self.setEnabled(True)
 
     def join(self):
         clicked_button = self.sender()
@@ -237,9 +246,15 @@ class Home(QMainWindow, base.BaseWidget):
         self.username_window.username_edit.clear()
         self.username_window.hide()
 
+    def open_users_online_window(self):
+        self.users_online_window.show()
+
     @pyqtSlot(list)
     def set_users_online(self, users_online):
         self.users_online.setText(f'{len(users_online)} users online')
+        self.clear_layout(self.users_online_window.users_online_layout)
+        for user in users_online:
+            self.users_online_window.users_online_layout.addWidget(QLabel(user))
 
     def get_channels(self):
         asyncio.run(self.chat_handler.get_channels())
@@ -263,6 +278,7 @@ class Home(QMainWindow, base.BaseWidget):
         clicked_button = self.sender()
         if self.current_channel != clicked_button.channel_name:
             self.current_channel = clicked_button.channel_name
+            self.sub_channels_groupbox.setTitle(self.current_channel)
             self.enable_send_message()
             asyncio.run(self.chat_handler.get_sub_channels(channel=self.current_channel))
 
