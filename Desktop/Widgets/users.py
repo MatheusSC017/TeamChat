@@ -21,13 +21,16 @@ class UsersOnline(BaseWidget):
         self.set_geometry_center(300, 700, screen_size, width_modifier=650)
 
     def initUI(self):
+        title = QLabel("Users online")
+        title.setFixedHeight(30)
+
         self.users_online_layout = QVBoxLayout()
 
         users_online = QWidget()
         users_online.setLayout(self.users_online_layout)
 
         master = QVBoxLayout()
-        master.addWidget(QLabel("Users online"))
+        master.addWidget(title)
         master.addWidget(users_online)
 
         self.setLayout(master)

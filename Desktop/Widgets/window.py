@@ -254,7 +254,7 @@ class Home(QMainWindow, base.BaseWidget):
         self.users_online.setText(f'{len(users_online)} users online')
         self.clear_layout(self.users_online_window.users_online_layout)
         for user in users_online:
-            self.users_online_window.users_online_layout.addWidget(QLabel(user))
+            self.users_online_window.users_online_layout.addWidget(buttons.PushButtonUser(user, self.base_path))
 
     def get_channels(self):
         asyncio.run(self.chat_handler.get_channels())

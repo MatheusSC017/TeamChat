@@ -79,3 +79,21 @@ class PushButtonSubChannel(QAbstractButton, BaseWidget):
 
     def paintEvent(self, a0, QPaintEvent=None):
         pass
+
+
+class PushButtonUser(QAbstractButton, BaseWidget):
+    def __init__(self, name, base_path):
+        super().__init__()
+        self.user_name = name
+
+        self.initUI(name)
+        self.setStyleCSS(base_path / "Static/CSS/button.css")
+
+    def initUI(self, name):
+        user = QHBoxLayout()
+        user.addWidget(QLabel(name))
+
+        self.setLayout(user)
+
+    def paintEvent(self, a0, QPaintEvent=None):
+        pass
