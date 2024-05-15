@@ -11,20 +11,20 @@ from PyQt6.QtWidgets import (
     QHBoxLayout,
     QVBoxLayout,
     QGroupBox,
+    QTabWidget
 )
 from PyQt6.QtGui import QAction
 from PyQt6.QtCore import pyqtSlot
 from threading import Thread
 from datetime import datetime
 import time
-import faker
 import asyncio
 from Widgets import buttons, chat, base, connect, username, users
-faker_instance = faker.Faker()
 
 
 class Home(QMainWindow, base.BaseWidget):
     connected = False
+    chats = {}
 
     def __init__(self, screen_size, base_path):
         super().__init__()
@@ -86,8 +86,11 @@ class Home(QMainWindow, base.BaseWidget):
         self.users_online_menu.triggered.connect(self.open_users_online_window)
 
     def get_messages_ui(self):
-        self.chat = QTextEdit()
-        self.chat.setReadOnly(True)
+        self.chats['Global'] = QTextEdit()
+        self.chats['Global'].setReadOnly(True)
+
+        self.tabs = QTabWidget()
+        self.tabs.addTab(self.chats['Global'], "Global")
 
         self.message = QLineEdit()
         self.message.setFixedHeight(40)
@@ -104,7 +107,7 @@ class Home(QMainWindow, base.BaseWidget):
         message_group.addWidget(self.button_send_message)
 
         column = QVBoxLayout()
-        column.addWidget(self.chat)
+        column.addWidget(self.tabs)
         column.addLayout(message_group)
         return column
 
@@ -201,7 +204,7 @@ class Home(QMainWindow, base.BaseWidget):
 
     def started_chat_ui(self):
         self.connect_menu.setText('Disconnect')
-        self.chat.setPlainText('You connected to the server')
+        self.chats['Global'].setPlainText('You connected to the server')
 
         self.username_menu.setDisabled(False)
         self.setEnabled(True)
@@ -211,7 +214,7 @@ class Home(QMainWindow, base.BaseWidget):
 
     def ended_chat_ui(self):
         self.connect_menu.setText('Connect')
-        self.chat.append('You have disconnected from the server')
+        self.chats['Global'].append('You have disconnected from the server')
 
         self.username_menu.setDisabled(True)
         self.message.setEnabled(False)
@@ -233,7 +236,7 @@ class Home(QMainWindow, base.BaseWidget):
             self.sub_channels_layouts[(self.current_channel, old_sub_channel)].user_layout.removeWidget(user_label)
             self.sub_channels_layouts[(self.current_channel, self.current_sub_channel)].user_layout.addWidget(user_label)
 
-            self.chat.setPlainText(f"You have joined {self.current_channel} / {self.current_sub_channel}")
+            self.chats['Global'].setPlainText(f"You have joined {self.current_channel} / {self.current_sub_channel}")
 
             self.enable_send_message()
 
@@ -301,18 +304,18 @@ class Home(QMainWindow, base.BaseWidget):
         self.sub_channels_layouts[(self.current_channel, self.current_sub_channel)].user_widgets[self.chat_handler.user] = user_label
         self.sub_channels_layouts[(self.current_channel, self.current_sub_channel)].user_layout.addWidget(user_label)
 
-        self.chat.setPlainText(f"You have joined {self.current_channel} / {self.current_sub_channel}")
+        self.chats['Global'].setPlainText(f"You have joined {self.current_channel} / {self.current_sub_channel}")
 
     def send_message(self):
         asyncio.run(self.chat_handler.send_input_message(self.message.text()))
-        self.chat.setPlainText(f"{self.chat.toPlainText()}\n"
-                               f"{datetime.now().strftime('%d/%m/%y %H:%M:%S')} - {self.chat_handler.user}: "
-                               f"{self.message.text()}")
+        self.chats['Global'].setPlainText(f"{self.chats['Global'].toPlainText()}\n"
+                                          f"{datetime.now().strftime('%d/%m/%y %H:%M:%S')} - {self.chat_handler.user}: "
+                                          f"{self.message.text()}")
         self.message.clear()
 
     @pyqtSlot(str)
     def on_message_received(self, message):
-        self.chat.append(message)
+        self.chats['Global'].append(message)
 
     def enable_send_message(self):
         if self.current_channel == 'Global':
