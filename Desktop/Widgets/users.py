@@ -23,6 +23,7 @@ class UsersOnline(BaseWidget):
     def initUI(self):
         title = QLabel("Users online")
         title.setFixedHeight(30)
+        title.setObjectName("title")
 
         self.users_online_layout = QVBoxLayout()
 

@@ -76,6 +76,7 @@ class Home(QMainWindow, base.BaseWidget):
         self.username_menu = QAction("Change Username")
         self.users_online_menu = QAction("Users")
         self.username_menu.setDisabled(True)
+        self.users_online_menu.setDisabled(True)
 
         main_menu.addAction(self.connect_menu)
         main_menu.addAction(self.username_menu)
@@ -207,6 +208,7 @@ class Home(QMainWindow, base.BaseWidget):
         self.chats['Logs'].setPlainText('You connected to the server')
 
         self.username_menu.setDisabled(False)
+        self.users_online_menu.setDisabled(False)
         self.setEnabled(True)
 
         self.connect_window.username_edit.clear()
@@ -217,6 +219,7 @@ class Home(QMainWindow, base.BaseWidget):
         self.chats['Logs'].append('You have disconnected from the server')
 
         self.username_menu.setDisabled(True)
+        self.users_online_menu.setDisabled(True)
         self.message.setEnabled(False)
         self.button_send_message.setEnabled(False)
 
@@ -325,9 +328,12 @@ class Home(QMainWindow, base.BaseWidget):
                                                           f"{self.message.text()}")
         self.message.clear()
 
-    @pyqtSlot(str)
-    def on_message_received(self, message):
-        self.chats[self.current_sub_channel].append(message)
+    @pyqtSlot(str, str)
+    def on_message_received(self, message, range):
+        if range == 'Global':
+            self.chats['Logs'].append(message)
+        else:
+            self.chats[self.current_sub_channel].append(message)
 
     def enable_send_message(self):
         if self.current_channel == 'Global':

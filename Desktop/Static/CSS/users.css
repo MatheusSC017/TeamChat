@@ -1,3 +1,7 @@
 QLabel {
+    font-size: 12px;
+}
+
+QLabel#title {
     font-size: 20px;
 }

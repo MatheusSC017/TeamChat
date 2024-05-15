@@ -20,7 +20,7 @@ SSL = bool(os.environ.get("SSL"))
 
 class ChatHandler(QWidget, object):
     usersOnline = pyqtSignal(list)
-    messageReceived = pyqtSignal(str)
+    messageReceived = pyqtSignal(str, str)
     setChannels = pyqtSignal(list)
     setSubChannels = pyqtSignal(dict)
     websocket = None
@@ -95,18 +95,22 @@ class ChatHandler(QWidget, object):
                 message_json = message.json()
                 action = message_json.get('action')
                 if action == 'connect':
-                    self.messageReceived.emit(f'{message_json["datetime"]} - {message_json["user"]} connected')
+                    self.messageReceived.emit(f'{message_json["datetime"]} - {message_json["user"]} connected',
+                                              'Global')
 
                 elif action == 'disconnect':
-                    self.messageReceived.emit(f'{message_json["datetime"]} - {message_json["user"]} disconnected')
+                    self.messageReceived.emit(f'{message_json["datetime"]} - {message_json["user"]} disconnected',
+                                              'Global')
 
                 elif action == 'join':
                     self.messageReceived.emit(f'{message_json["user"]} joined {message_json["channel"]} / '
-                                              f'{message_json["sub_channel"]}')
+                                              f'{message_json["sub_channel"]}',
+                                              'Local')
 
                 elif action == 'update_username':
                     self.messageReceived.emit(f'{message_json["old_username"]} updated your name to '
-                                              f'{message_json["new_username"]}')
+                                              f'{message_json["new_username"]}',
+                                              'Local')
 
                 elif action == 'user_list':
                     self.usersOnline.emit(message_json["user_list"])
@@ -119,7 +123,8 @@ class ChatHandler(QWidget, object):
 
                 elif action == 'chat_message':
                     self.messageReceived.emit(f'{message_json["datetime"]} - '
-                                              f'{message_json["user"]}: {message_json["message"]}')
+                                              f'{message_json["user"]}: {message_json["message"]}',
+                                              'Local')
 
                 else:
                     print(f"Unknown action received: {action}")
