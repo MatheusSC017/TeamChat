@@ -126,6 +126,11 @@ class ChatHandler(QWidget, object):
                                               f'{message_json["user"]}: {message_json["message"]}',
                                               'Local')
 
+                elif action == 'direct_message':
+                    self.messageReceived.emit(f'{message_json["datetime"]} - '
+                                              f'{message_json["user"]}: {message_json["message"]}',
+                                              'Direct')
+
                 else:
                     print(f"Unknown action received: {action}")
 

@@ -8,7 +8,7 @@ from utils import local_broadcast, global_broadcast
 
 log = logging.getLogger(__name__)
 actions = {'connect', 'disconnect', 'chat_message', 'get_channels', 'get_sub_channels', 'join', 'update_username',
-           'user_list'}
+           'user_list', 'direct_message'}
 
 
 async def index(request):
@@ -42,6 +42,13 @@ async def index(request):
                                            username,
                                            message_json.get('datetime'),
                                            message_json.get('message'))
+
+                    if action == 'direct_message':
+                        await direct_message(request,
+                                             username,
+                                             message_json.get('recipient'),
+                                             message_json.get('datetime'),
+                                             message_json.get('message'))
 
                     elif action == 'get_channels':
                         await get_channels(request, ws_current)
@@ -175,3 +182,16 @@ async def chat_message(request, ws_current, username, datetime, message):
         }
 
         await local_broadcast(request, ws_current, channel, sub_channel, content)
+
+
+async def direct_message(request, username, recipient, datetime, message):
+    channel, sub_channel = request.app['user_list'].get(recipient)
+    ws = request.app['websockets'][channel][sub_channel].get(recipient)
+
+    content = {
+        'action': 'direct_message',
+        'user': username,
+        'datetime': datetime,
+        'message': message
+    }
+    await ws.send_json(content)
