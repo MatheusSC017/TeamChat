@@ -341,11 +341,19 @@ class Home(QMainWindow, base.BaseWidget):
                     f"{self.message.text()}")
 
     @pyqtSlot(str, str)
-    def on_message_received(self, message, range):
-        if range == 'Global':
+    def on_message_received(self, message, recipient):
+        if recipient == 'Global':
             self.chats['Logs'].append(message)
-        else:
+        elif recipient == 'Local':
             self.chats[self.current_sub_channel].append(message)
+        else:
+            if recipient not in self.chats.keys():
+                self.chats[recipient] = QTextEdit()
+                self.chats[recipient].setReadOnly(True)
+
+                index = self.tabs.addTab(self.chats[recipient], recipient)
+                self.tabs.setCurrentIndex(index)
+            self.chats[recipient].append(message)
 
     def start_direct_chat(self):
         clicked_button = self.sender()
