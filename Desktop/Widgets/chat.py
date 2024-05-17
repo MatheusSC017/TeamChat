@@ -81,10 +81,16 @@ class ChatHandler(QWidget, object):
         self.user = username
         await self.websocket.send_json({'action': 'update_username', 'username': username})
 
-    async def send_input_message(self, message: str) -> None:
-        await self.websocket.send_json({'action': 'chat_message',
-                                        'message': message,
-                                        'datetime': datetime.now().strftime('%d/%m/%Y %H:%M:%S')})
+    async def send_input_message(self, message: str, recipient: str=None) -> None:
+        if recipient is None:
+            await self.websocket.send_json({'action': 'chat_message',
+                                            'message': message,
+                                            'datetime': datetime.now().strftime('%d/%m/%Y %H:%M:%S')})
+        else:
+            await self.websocket.send_json({'action': 'direct_message',
+                                            'recipient': recipient,
+                                            'message': message,
+                                            'datetime': datetime.now().strftime('%d/%m/%Y %H:%M:%S')})
 
     async def subscribe_to_messages(self) -> None:
         async for message in self.websocket:

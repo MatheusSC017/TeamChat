@@ -324,11 +324,21 @@ class Home(QMainWindow, base.BaseWidget):
             self.tabs.setCurrentIndex(1)
 
     def send_message(self):
-        asyncio.run(self.chat_handler.send_input_message(self.message.text()))
-        self.chats[self.current_sub_channel].setPlainText(f"{self.chats[self.current_sub_channel].toPlainText()}\n"
-                                                          f"{datetime.now().strftime('%d/%m/%y %H:%M:%S')} - {self.chat_handler.user}: "
-                                                          f"{self.message.text()}")
-        self.message.clear()
+        recipient = self.tabs.tabText(self.tabs.currentIndex())
+
+        if self.current_sub_channel != 'Logs':
+            if self.current_sub_channel == recipient:
+                asyncio.run(self.chat_handler.send_input_message(self.message.text()))
+                self.chats[self.current_sub_channel].setPlainText(f"{self.chats[self.current_sub_channel].toPlainText()}\n"
+                                                                  f"{datetime.now().strftime('%d/%m/%y %H:%M:%S')} - {self.chat_handler.user}: "
+                                                                  f"{self.message.text()}")
+                self.message.clear()
+            else:
+                asyncio.run(self.chat_handler.send_input_message(self.message.text(), recipient=recipient))
+                self.chats[recipient].setPlainText(
+                    f"{self.chats[recipient].toPlainText()}\n"
+                    f"{datetime.now().strftime('%d/%m/%y %H:%M:%S')} - {self.chat_handler.user}: "
+                    f"{self.message.text()}")
 
     @pyqtSlot(str, str)
     def on_message_received(self, message, range):
