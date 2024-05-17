@@ -57,8 +57,10 @@ async def index(request):
                         await get_sub_channels(request, ws_current, message_json.get('channel'))
 
                     elif action == 'user_list':
+                        user_list = sorted(list(request.app['user_list'].keys()))
+                        user_list.pop(user_list.index(username))
                         await ws_current.send_json({'action': 'user_list',
-                                                    'user_list': list(request.app['user_list'].keys())})
+                                                    'user_list': user_list})
 
                     elif action == 'join':
                         await join(request, ws_current, username, message_json.get('channel'), message_json.get('sub_channel'))

@@ -261,7 +261,9 @@ class Home(QMainWindow, base.BaseWidget):
         self.users_online.setText(f'{len(users_online)} users online')
         self.clear_layout(self.users_online_window.users_online_layout)
         for user in users_online:
-            self.users_online_window.users_online_layout.addWidget(buttons.PushButtonUser(user, self.base_path))
+            user_button = buttons.PushButtonUser(user, self.base_path)
+            user_button.clicked.connect(self.start_direct_chat)
+            self.users_online_window.users_online_layout.addWidget(user_button)
 
     def get_channels(self):
         asyncio.run(self.chat_handler.get_channels())
@@ -318,7 +320,7 @@ class Home(QMainWindow, base.BaseWidget):
             self.chats[self.current_sub_channel] = QTextEdit()
             self.chats[self.current_sub_channel].setReadOnly(True)
 
-            self.tabs.addTab(self.chats[self.current_sub_channel], self.current_sub_channel)
+            self.tabs.insertTab(1, self.chats[self.current_sub_channel], self.current_sub_channel)
             self.tabs.setCurrentIndex(1)
 
     def send_message(self):
@@ -334,6 +336,16 @@ class Home(QMainWindow, base.BaseWidget):
             self.chats['Logs'].append(message)
         else:
             self.chats[self.current_sub_channel].append(message)
+
+    def start_direct_chat(self):
+        clicked_button = self.sender()
+        username = clicked_button.username
+        if username not in self.chats.keys():
+            self.chats[username] = QTextEdit()
+            self.chats[username].setReadOnly(True)
+
+            self.tabs.addTab(self.chats[username], username)
+        self.tabs.setCurrentIndex(self.tabs.indexOf(self.chats[username]))
 
     def enable_send_message(self):
         if self.current_channel == 'Global':

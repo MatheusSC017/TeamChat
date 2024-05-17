@@ -84,7 +84,7 @@ class PushButtonSubChannel(QAbstractButton, BaseWidget):
 class PushButtonUser(QAbstractButton, BaseWidget):
     def __init__(self, name, base_path):
         super().__init__()
-        self.user_name = name
+        self.username = name
 
         self.initUI(name)
         self.setStyleCSS(base_path / "Static/CSS/button.css")
