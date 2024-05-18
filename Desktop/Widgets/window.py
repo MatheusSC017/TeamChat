@@ -25,6 +25,8 @@ from Widgets import buttons, chat, base, connect, username, users
 class Home(QMainWindow, base.BaseWidget):
     connected = False
     chats = {}
+    log_chat = None
+    sub_channel_chat = None
 
     def __init__(self, screen_size, base_path):
         super().__init__()
@@ -87,11 +89,11 @@ class Home(QMainWindow, base.BaseWidget):
         self.users_online_menu.triggered.connect(self.open_users_online_window)
 
     def get_messages_ui(self):
-        self.chats[self.current_sub_channel] = QTextEdit()
-        self.chats[self.current_sub_channel].setReadOnly(True)
+        self.log_chat = QTextEdit()
+        self.log_chat.setReadOnly(True)
 
         self.tabs = QTabWidget()
-        self.tabs.addTab(self.chats[self.current_sub_channel], self.current_sub_channel)
+        self.tabs.addTab(self.log_chat, 'Logs')
 
         self.message = QLineEdit()
         self.message.setFixedHeight(40)
@@ -205,7 +207,7 @@ class Home(QMainWindow, base.BaseWidget):
 
     def started_chat_ui(self):
         self.connect_menu.setText('Disconnect')
-        self.chats['Logs'].setPlainText('You connected to the server')
+        self.log_chat.setPlainText('You connected to the server')
 
         self.username_menu.setDisabled(False)
         self.users_online_menu.setDisabled(False)
@@ -216,7 +218,7 @@ class Home(QMainWindow, base.BaseWidget):
 
     def ended_chat_ui(self):
         self.connect_menu.setText('Connect')
-        self.chats['Logs'].append('You have disconnected from the server')
+        self.log_chat.append('You have disconnected from the server')
 
         self.username_menu.setDisabled(True)
         self.users_online_menu.setDisabled(True)
@@ -240,7 +242,7 @@ class Home(QMainWindow, base.BaseWidget):
             self.sub_channels_layouts[(self.current_channel, self.current_sub_channel)].user_layout.addWidget(user_label)
 
             self.set_sub_channel_chat()
-            self.chats[self.current_sub_channel].setPlainText(f"You have joined {self.current_channel} / {self.current_sub_channel}")
+            self.sub_channel_chat.setPlainText(f"You have joined {self.current_channel} / {self.current_sub_channel}")
 
             self.enable_send_message()
 
@@ -311,17 +313,21 @@ class Home(QMainWindow, base.BaseWidget):
         self.sub_channels_layouts[(self.current_channel, self.current_sub_channel)].user_layout.addWidget(user_label)
 
         self.set_sub_channel_chat()
-        self.chats[self.current_sub_channel].setPlainText(f"You have joined {self.current_channel} / {self.current_sub_channel}")
 
     def set_sub_channel_chat(self):
-        self.tabs.removeTab(1)
+        if self.sub_channel_chat is not None:
+            self.tabs.removeTab(1)
+            self.sub_channel_chat = None
 
         if self.current_sub_channel != 'Logs':
-            self.chats[self.current_sub_channel] = QTextEdit()
-            self.chats[self.current_sub_channel].setReadOnly(True)
+            self.sub_channel_chat = QTextEdit()
+            self.sub_channel_chat.setReadOnly(True)
 
-            self.tabs.insertTab(1, self.chats[self.current_sub_channel], self.current_sub_channel)
+            self.tabs.insertTab(1, self.sub_channel_chat, self.current_sub_channel)
             self.tabs.setCurrentIndex(1)
+            self.sub_channel_chat.setPlainText(f"You have joined {self.current_channel} / {self.current_sub_channel}")
+        else:
+            self.log_chat.setPlainText(f"You have joined {self.current_channel} / {self.current_sub_channel}")
 
     def send_message(self):
         recipient = self.tabs.tabText(self.tabs.currentIndex())
@@ -329,23 +335,23 @@ class Home(QMainWindow, base.BaseWidget):
         if self.current_sub_channel != 'Logs':
             if self.current_sub_channel == recipient:
                 asyncio.run(self.chat_handler.send_input_message(self.message.text()))
-                self.chats[self.current_sub_channel].setPlainText(f"{self.chats[self.current_sub_channel].toPlainText()}\n"
-                                                                  f"{datetime.now().strftime('%d/%m/%y %H:%M:%S')} - {self.chat_handler.user}: "
-                                                                  f"{self.message.text()}")
-                self.message.clear()
+                self.sub_channel_chat.setPlainText(f"{self.sub_channel_chat.toPlainText()}\n"
+                                                   f"{datetime.now().strftime('%d/%m/%y %H:%M:%S')} - {self.chat_handler.user}: "
+                                                   f"{self.message.text()}")
             else:
                 asyncio.run(self.chat_handler.send_input_message(self.message.text(), recipient=recipient))
                 self.chats[recipient].setPlainText(
                     f"{self.chats[recipient].toPlainText()}\n"
                     f"{datetime.now().strftime('%d/%m/%y %H:%M:%S')} - {self.chat_handler.user}: "
                     f"{self.message.text()}")
+            self.message.clear()
 
     @pyqtSlot(str, str)
     def on_message_received(self, message, recipient):
         if recipient == 'Global':
-            self.chats['Logs'].append(message)
+            self.log_chat.append(message)
         elif recipient == 'Local':
-            self.chats[self.current_sub_channel].append(message)
+            self.sub_channel_chat.append(message)
         else:
             if recipient not in self.chats.keys():
                 self.chats[recipient] = QTextEdit()
