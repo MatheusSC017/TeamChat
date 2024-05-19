@@ -260,7 +260,7 @@ class Home(QMainWindow, base.BaseWidget):
 
     @pyqtSlot(list)
     def set_users_online(self, users_online):
-        self.users_online.setText(f'{len(users_online)} users online')
+        self.users_online.setText(f'{len(users_online) + 1} users online')
         self.clear_layout(self.users_online_window.users_online_layout)
         for user in users_online:
             user_button = buttons.PushButtonUser(user, self.base_path)
@@ -334,16 +334,14 @@ class Home(QMainWindow, base.BaseWidget):
 
         if self.current_sub_channel != 'Logs':
             if self.current_sub_channel == recipient:
-                asyncio.run(self.chat_handler.send_input_message(self.message.text()))
-                self.sub_channel_chat.setPlainText(f"{self.sub_channel_chat.toPlainText()}\n"
-                                                   f"{datetime.now().strftime('%d/%m/%y %H:%M:%S')} - {self.chat_handler.user}: "
-                                                   f"{self.message.text()}")
+                recipient = None
+                recipient_widget = self.sub_channel_chat
             else:
-                asyncio.run(self.chat_handler.send_input_message(self.message.text(), recipient=recipient))
-                self.chats[recipient].setPlainText(
-                    f"{self.chats[recipient].toPlainText()}\n"
-                    f"{datetime.now().strftime('%d/%m/%y %H:%M:%S')} - {self.chat_handler.user}: "
-                    f"{self.message.text()}")
+                recipient_widget = self.chats[recipient]
+            asyncio.run(self.chat_handler.send_input_message(self.message.text(), recipient=recipient))
+            recipient_widget.setPlainText(f"{recipient_widget.toPlainText()}\n"
+                                          f"{datetime.now().strftime('%d/%m/%y %H:%M:%S')} - {self.chat_handler.user}: "
+                                          f"{self.message.text()}")
             self.message.clear()
 
     @pyqtSlot(str, str)
