@@ -22,26 +22,15 @@ import asyncio
 from Widgets import buttons, chat, base, connect, username, users
 
 
-class Home(QMainWindow, base.BaseWidget):
-    connected = False
-    chats = {}
-    log_chat = None
-    sub_channel_chat = None
-
+class MainWindow(QMainWindow, base.BaseWidget):
     def __init__(self, screen_size, base_path):
         super().__init__()
         self.screen_size = screen_size
         self.base_path = base_path
 
-        self.channels = []
-        self.current_channel = 'Global'
-        self.current_sub_channel = 'Logs'
-        self.sub_channels_layouts = {}
-
         self.settings(screen_size)
         self.initUI()
         self.setStyleCSS(base_path / "Static/CSS/main.css")
-        self.create_chat()
 
     def settings(self, screen_size):
         self.setWindowTitle("TeamChat")
@@ -168,6 +157,23 @@ class Home(QMainWindow, base.BaseWidget):
         column.addWidget(self.users_scroll)
         return column
 
+
+class Home(MainWindow):
+    connected = False
+
+    chats = {}
+    log_chat = None
+    sub_channel_chat = None
+
+    current_channel = 'Global'
+    current_sub_channel = 'Logs'
+    sub_channels_layouts = {}
+
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+
+        self.create_chat()
+
     def create_chat(self):
         self.chat_handler = chat.ChatHandler()
         self.chat_handler.messageReceived.connect(self.on_message_received)
@@ -274,10 +280,6 @@ class Home(QMainWindow, base.BaseWidget):
     def set_channels(self, channels):
         self.channels_availables.setText(f'{len(channels)} channels')
 
-        if self.channels == channels:
-            return
-
-        self.channels = channels
         self.clear_layout(self.channels_layout)
 
         for channel in channels:
