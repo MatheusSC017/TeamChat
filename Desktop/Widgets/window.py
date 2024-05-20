@@ -38,11 +38,8 @@ class MainWindow(QMainWindow, base.BaseWidget):
 
     def initUI(self):
         self.connect_window = connect.Connect(self.base_path, self.screen_size)
-        self.connect_window.connectRequest.connect(self.start_chat)
-        self.connect_window.closeSign.connect(self.close_connect_window)
 
         self.username_window = username.UpdateUsername(self.base_path, self.screen_size)
-        self.username_window.updateUsername.connect(self.update_username)
 
         self.users_online_window = users.UsersOnline(self.base_path, self.screen_size)
 
@@ -73,10 +70,6 @@ class MainWindow(QMainWindow, base.BaseWidget):
         main_menu.addAction(self.username_menu)
         main_menu.addAction(self.users_online_menu)
 
-        self.connect_menu.triggered.connect(self.start_end_connection)
-        self.username_menu.triggered.connect(self.update_username_ui)
-        self.users_online_menu.triggered.connect(self.open_users_online_window)
-
     def get_messages_ui(self):
         self.log_chat = QTextEdit()
         self.log_chat.setReadOnly(True)
@@ -86,12 +79,10 @@ class MainWindow(QMainWindow, base.BaseWidget):
 
         self.message = QLineEdit()
         self.message.setFixedHeight(40)
-        self.message.returnPressed.connect(self.send_message)
         self.message.setEnabled(False)
 
         self.button_send_message = QPushButton("Send")
         self.button_send_message.setFixedHeight(40)
-        self.button_send_message.clicked.connect(self.send_message)
         self.button_send_message.setEnabled(False)
 
         message_group = QHBoxLayout()
@@ -160,6 +151,8 @@ class MainWindow(QMainWindow, base.BaseWidget):
 
 class Home(MainWindow):
     connected = False
+    chat_handler = None
+    chat_thread = None
 
     chats = {}
     log_chat = None
@@ -173,19 +166,32 @@ class Home(MainWindow):
         super().__init__(*args, **kwargs)
 
         self.create_chat()
+        self.create_widgets_connections()
 
     def create_chat(self):
         self.chat_handler = chat.ChatHandler()
+        self.chat_thread = Thread(target=asyncio.run, args=(self.chat_handler.handler(),))
+
+    def create_widgets_connections(self):
+        # Menu components
+        self.connect_menu.triggered.connect(self.start_end_connection)
+        self.username_menu.triggered.connect(self.update_username_ui)
+        self.users_online_menu.triggered.connect(self.open_users_online_window)
+
+        # Sub window components
+        self.connect_window.closeSign.connect(self.close_connect_window)
+        self.connect_window.connectRequest.connect(self.start_chat)
+        self.username_window.updateUsername.connect(self.update_username)
+
+        # Message components
+        self.message.returnPressed.connect(self.send_message)
+        self.button_send_message.clicked.connect(self.send_message)
+
+        # Chat handler
         self.chat_handler.messageReceived.connect(self.on_message_received)
         self.chat_handler.setChannels.connect(self.set_channels)
         self.chat_handler.setSubChannels.connect(self.set_sub_channels)
         self.chat_handler.usersOnline.connect(self.set_users_online)
-        self.chat_thread = Thread(target=asyncio.run, args=(self.chat_handler.handler(),))
-
-    def closeEvent(self, *args, **kwargs):
-        super().closeEvent(*args, **kwargs)
-        if self.connected:
-            self.end_chat()
 
     def start_end_connection(self):
         self.create_connect_window() if not self.connected else self.end_chat()
@@ -386,3 +392,8 @@ class Home(MainWindow):
             widget = item.widget()
             widget.setParent(None)
             layout.removeWidget(widget)
+
+    def closeEvent(self, *args, **kwargs):
+        super().closeEvent(*args, **kwargs)
+        if self.connected:
+            self.end_chat()
