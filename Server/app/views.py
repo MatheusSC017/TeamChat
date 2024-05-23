@@ -7,8 +7,8 @@ import aiohttp
 from utils import local_broadcast, global_broadcast
 
 log = logging.getLogger(__name__)
-actions = {'connect', 'disconnect', 'chat_message', 'get_channels', 'get_sub_channels', 'join', 'update_username',
-           'user_list', 'direct_message'}
+actions = {'connect', 'disconnect', 'chat_message', 'get_structure', 'get_channels', 'get_sub_channels', 'join',
+           'update_username', 'user_list', 'direct_message'}
 
 
 async def index(request):
@@ -49,6 +49,9 @@ async def index(request):
                                              message_json.get('recipient'),
                                              message_json.get('datetime'),
                                              message_json.get('message'))
+
+                    elif action == 'get_structure':
+                        await get_structure(request, ws_current)
 
                     elif action == 'get_channels':
                         await get_channels(request, ws_current)
@@ -113,6 +116,15 @@ async def disconnect(request, ws_current, username):
         del request.app['user_list'][username]
 
 
+async def get_structure(request, ws_current):
+    structure = {}
+    for channel in request.app['websockets'].keys():
+        structure[channel] = {sub_channel: list(request.app['websockets'][channel][sub_channel].keys())
+                              for sub_channel in request.app['websockets'][channel].keys()}
+    await ws_current.send_json({'action': 'get_structure',
+                                'structure': structure})
+
+
 async def get_channels(request, ws_current):
     channels = list(request.app['websockets'].keys())
     await ws_current.send_json({'action': 'get_channels',
@@ -120,9 +132,8 @@ async def get_channels(request, ws_current):
 
 
 async def get_sub_channels(request, ws_current, channel):
-    sub_channels = list(request.app['websockets'][channel].keys())
     sub_channels = {sub_channel: list(request.app['websockets'][channel][sub_channel].keys())
-                    for sub_channel in sub_channels}
+                    for sub_channel in request.app['websockets'][channel].keys()}
     await ws_current.send_json({'action': 'get_sub_channels',
                                 'sub_channels': sub_channels})
 

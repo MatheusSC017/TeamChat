@@ -38,9 +38,7 @@ class MainWindow(QMainWindow, base.BaseWidget):
 
     def initUI(self):
         self.connect_window = connect.Connect(self.base_path, self.screen_size)
-
         self.username_window = username.UpdateUsername(self.base_path, self.screen_size)
-
         self.users_online_window = users.UsersOnline(self.base_path, self.screen_size)
 
         self.get_menu_ui()
