@@ -56,7 +56,6 @@ class ChatHandler(QWidget, object):
 
         await self.get_user_list()
         await self.get_structure()
-        await self.get_channels()
 
     async def disconnect(self) -> None:
         await self.websocket.send_json({'action': 'disconnect', })
@@ -77,7 +76,7 @@ class ChatHandler(QWidget, object):
         await self.websocket.send_json({'action': 'get_channels'})
 
     async def get_sub_channels(self, channel: str) -> None:
-        await self.websocket.send_json({'action': 'get_sub_channels', 'channel': channel})
+        self.setSubChannels.emit(self.structure[channel])
 
     async def join(self, channel: str, sub_channel: str):
         await self.websocket.send_json({'action': 'join', 'channel': channel, 'sub_channel': sub_channel})
@@ -87,7 +86,6 @@ class ChatHandler(QWidget, object):
         await self.websocket.send_json({'action': 'update_username', 'username': username})
 
     async def send_input_message(self, message: str, recipient: str = None) -> None:
-        print(self.structure)
         if recipient is None:
             await self.websocket.send_json({'action': 'chat_message',
                                             'message': message,
@@ -129,6 +127,7 @@ class ChatHandler(QWidget, object):
 
                 elif action == 'get_structure':
                     self.structure = message_json["structure"]
+                    self.setChannels.emit(list(self.structure.keys()))
 
                 elif action == 'get_channels':
                     self.setChannels.emit(message_json["channels"])

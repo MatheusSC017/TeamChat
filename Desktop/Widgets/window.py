@@ -152,7 +152,7 @@ class Home(MainWindow):
     chat_handler = None
     chat_thread = None
 
-    chats = {}
+    direct_chats = {}
     log_chat = None
     sub_channel_chat = None
 
@@ -312,13 +312,14 @@ class Home(MainWindow):
             self.sub_channels_layout.addWidget(sub_channel_widget)
 
         self.current_sub_channel = list(sub_channels.keys())[0]
-        asyncio.run(self.chat_handler.join(channel=self.current_channel, sub_channel=self.current_sub_channel))
 
         user_label = QLabel(self.chat_handler.user)
         self.sub_channels_layouts[(self.current_channel, self.current_sub_channel)].user_widgets[self.chat_handler.user] = user_label
         self.sub_channels_layouts[(self.current_channel, self.current_sub_channel)].user_layout.addWidget(user_label)
 
         self.set_sub_channel_chat()
+
+        # asyncio.run(self.chat_handler.join(self.current_channel, self.current_sub_channel))
 
     def set_sub_channel_chat(self):
         if self.sub_channel_chat is not None:
@@ -343,7 +344,7 @@ class Home(MainWindow):
                 recipient = None
                 recipient_widget = self.sub_channel_chat
             else:
-                recipient_widget = self.chats[recipient]
+                recipient_widget = self.direct_chats[recipient]
             asyncio.run(self.chat_handler.send_input_message(self.message.text(), recipient=recipient))
             recipient_widget.setPlainText(f"{recipient_widget.toPlainText()}\n"
                                           f"{datetime.now().strftime('%d/%m/%y %H:%M:%S')} - {self.chat_handler.user}: "
@@ -357,23 +358,23 @@ class Home(MainWindow):
         elif recipient == 'Local':
             self.sub_channel_chat.append(message)
         else:
-            if recipient not in self.chats.keys():
-                self.chats[recipient] = QTextEdit()
-                self.chats[recipient].setReadOnly(True)
+            if recipient not in self.direct_chats.keys():
+                self.direct_chats[recipient] = QTextEdit()
+                self.direct_chats[recipient].setReadOnly(True)
 
-                index = self.tabs.addTab(self.chats[recipient], recipient)
+                index = self.tabs.addTab(self.direct_chats[recipient], recipient)
                 self.tabs.setCurrentIndex(index)
-            self.chats[recipient].append(message)
+            self.direct_chats[recipient].append(message)
 
     def start_direct_chat(self):
         clicked_button = self.sender()
         username = clicked_button.username
-        if username not in self.chats.keys():
-            self.chats[username] = QTextEdit()
-            self.chats[username].setReadOnly(True)
+        if username not in self.direct_chats.keys():
+            self.direct_chats[username] = QTextEdit()
+            self.direct_chats[username].setReadOnly(True)
 
-            self.tabs.addTab(self.chats[username], username)
-        self.tabs.setCurrentIndex(self.tabs.indexOf(self.chats[username]))
+            self.tabs.addTab(self.direct_chats[username], username)
+        self.tabs.setCurrentIndex(self.tabs.indexOf(self.direct_chats[username]))
 
     def enable_send_message(self):
         if self.current_channel == 'Global':

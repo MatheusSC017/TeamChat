@@ -66,6 +66,7 @@ async def index(request):
                                                     'user_list': user_list})
 
                     elif action == 'join':
+                        print(message_json.get('channel'), message_json.get('sub_channel'))
                         await join(request, ws_current, username, message_json.get('channel'), message_json.get('sub_channel'))
 
                     elif action == 'update_username':
@@ -116,6 +117,7 @@ async def disconnect(request, ws_current, username):
         del request.app['user_list'][username]
 
 
+# Obsolete, will be removed
 async def get_structure(request, ws_current):
     structure = {}
     for channel in request.app['websockets'].keys():
@@ -125,6 +127,7 @@ async def get_structure(request, ws_current):
                                 'structure': structure})
 
 
+# Obsolete, will be removed
 async def get_channels(request, ws_current):
     channels = list(request.app['websockets'].keys())
     await ws_current.send_json({'action': 'get_channels',
