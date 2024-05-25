@@ -64,18 +64,13 @@ class ChatHandler(QWidget, object):
         while True:
             await asyncio.sleep(2)
             await self.get_user_list()
-            await self.get_channels()
-
     async def get_user_list(self) -> None:
         await self.websocket.send_json({'action': 'user_list', })
 
     async def get_structure(self) -> None:
         await self.websocket.send_json({'action': 'get_structure'})
 
-    async def get_channels(self) -> None:
-        await self.websocket.send_json({'action': 'get_channels'})
-
-    async def get_sub_channels(self, channel: str) -> None:
+    def get_sub_channels(self, channel: str) -> None:
         self.setSubChannels.emit(self.structure[channel])
 
     async def join(self, channel: str, sub_channel: str):
