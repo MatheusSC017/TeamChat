@@ -25,8 +25,6 @@ class ChatHandler(QWidget, object):
     setSubChannels = pyqtSignal(dict)
     websocket = None
     user = None
-    channel = None
-    sub_channel = None
     structure = None
 
     async def handler(self) -> None:
@@ -64,6 +62,7 @@ class ChatHandler(QWidget, object):
         while True:
             await asyncio.sleep(2)
             await self.get_user_list()
+
     async def get_user_list(self) -> None:
         await self.websocket.send_json({'action': 'user_list', })
 
@@ -75,6 +74,7 @@ class ChatHandler(QWidget, object):
 
     async def join(self, channel: str, sub_channel: str):
         await self.websocket.send_json({'action': 'join', 'channel': channel, 'sub_channel': sub_channel})
+        self.update_structure(channel, sub_channel, self.user)
 
     async def update_username(self, username: str) -> None:
         self.user = username
@@ -111,6 +111,7 @@ class ChatHandler(QWidget, object):
                     self.messageReceived.emit(f'{message_json["user"]} joined {message_json["channel"]} / '
                                               f'{message_json["sub_channel"]}',
                                               'Local')
+                    self.update_structure(message_json["channel"], message_json["sub_channel"], message_json["user"])
 
                 elif action == 'update_username':
                     self.messageReceived.emit(f'{message_json["old_username"]} updated your name to '
@@ -123,12 +124,7 @@ class ChatHandler(QWidget, object):
                 elif action == 'get_structure':
                     self.structure = message_json["structure"]
                     self.setChannels.emit(list(self.structure.keys()))
-
-                elif action == 'get_channels':
-                    self.setChannels.emit(message_json["channels"])
-
-                elif action == 'get_sub_channels':
-                    self.setSubChannels.emit(message_json["sub_channels"])
+                    self.get_sub_channels('Global')
 
                 elif action == 'chat_message':
                     self.messageReceived.emit(f'{message_json["datetime"]} - '
@@ -145,3 +141,15 @@ class ChatHandler(QWidget, object):
 
             except (json.JSONDecodeError, KeyError) as e:
                 self.logger.error(f"Error processing message: {e}")
+
+    def update_structure(self, new_channel, new_sub_channel, user):
+        channel, sub_channel = self.get_user_position(user)
+        self.structure[channel][sub_channel].remove(user)
+
+        self.structure[new_channel][new_sub_channel].append(user)
+
+    def get_user_position(self, user):
+        for channel in self.structure.keys():
+            for sub_channel in self.structure[channel].keys():
+                if user in self.structure[channel][sub_channel]:
+                    return channel, sub_channel

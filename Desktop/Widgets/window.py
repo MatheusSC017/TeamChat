@@ -299,6 +299,8 @@ class Home(MainWindowUI):
             self.sub_channels_groupbox.setTitle(self.current_channel)
             self.enable_send_message()
 
+            self.current_sub_channel = list(self.chat_handler.structure[self.current_channel].keys())[0]
+            asyncio.create_task(self.chat_handler.join(self.current_channel, self.current_sub_channel))
             self.chat_handler.get_sub_channels(channel=self.current_channel)
 
     @asyncSlot(dict)
@@ -313,15 +315,9 @@ class Home(MainWindowUI):
 
             self.sub_channels_layout.addWidget(sub_channel_widget)
 
-        self.current_sub_channel = list(sub_channels.keys())[0]
-
-        user_label = QLabel(self.chat_handler.user)
-        self.sub_channels_layouts[(self.current_channel, self.current_sub_channel)].user_widgets[self.chat_handler.user] = user_label
-        self.sub_channels_layouts[(self.current_channel, self.current_sub_channel)].user_layout.addWidget(user_label)
-
         self.set_sub_channel_chat()
 
-        await self.chat_handler.join(self.current_channel, self.current_sub_channel)
+
 
     def set_sub_channel_chat(self):
         if self.sub_channel_chat is not None:
