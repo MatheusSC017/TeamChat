@@ -154,11 +154,13 @@ async def join(request, ws_current, username, channel, sub_channel):
         content = {
             'action': 'join',
             'user': username,
+            'old_channel': old_channel,
+            'old_sub_channel': old_sub_channel,
             'channel': channel,
             'sub_channel': sub_channel,
             'datetime': datetime.now().strftime('%d/%m/%Y %H:%M:%S')
         }
-        await local_broadcast(request, ws_current, channel, sub_channel, content)
+        await global_broadcast(request, ws_current, content)
 
 
 async def update_username(request, ws_current, old_username, new_username):

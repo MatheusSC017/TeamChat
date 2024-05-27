@@ -22,9 +22,11 @@ class ChatHandler(QWidget, object):
     usersOnline = pyqtSignal(list)
     messageReceived = pyqtSignal(str, str)
     setChannels = pyqtSignal(list)
-    setSubChannels = pyqtSignal(dict)
+    setSubChannels = pyqtSignal(dict, bool)
     websocket = None
     user = None
+    current_channel = 'Global'
+    current_sub_channel = 'Logs'
     structure = None
 
     async def handler(self) -> None:
@@ -70,7 +72,7 @@ class ChatHandler(QWidget, object):
         await self.websocket.send_json({'action': 'get_structure'})
 
     def get_sub_channels(self, channel: str) -> None:
-        self.setSubChannels.emit(self.structure[channel])
+        self.setSubChannels.emit(self.structure[channel], True)
 
     async def join(self, channel: str, sub_channel: str):
         await self.websocket.send_json({'action': 'join', 'channel': channel, 'sub_channel': sub_channel})
@@ -102,6 +104,9 @@ class ChatHandler(QWidget, object):
                 if action == 'connect':
                     self.messageReceived.emit(f'{message_json["datetime"]} - {message_json["user"]} connected',
                                               'Global')
+                    self.structure['Global']['Logs'].append(message_json['user'])
+                    if self.current_channel == 'Global':
+                        self.setSubChannels.emit(self.structure['Global'], False)
 
                 elif action == 'disconnect':
                     self.messageReceived.emit(f'{message_json["datetime"]} - {message_json["user"]} disconnected',
@@ -110,7 +115,12 @@ class ChatHandler(QWidget, object):
                 elif action == 'join':
                     self.messageReceived.emit(f'{message_json["user"]} joined {message_json["channel"]} / '
                                               f'{message_json["sub_channel"]}',
-                                              'Local')
+                                              'Global')
+                    if self.current_channel == message_json["channel"] and \
+                       self.current_sub_channel == message_json["sub_channel"]:
+                        self.messageReceived.emit(f'{message_json["user"]} joined {message_json["channel"]} / '
+                                                  f'{message_json["sub_channel"]}',
+                                                  'Local')
                     self.update_structure(message_json["channel"], message_json["sub_channel"], message_json["user"])
 
                 elif action == 'update_username':
@@ -147,6 +157,8 @@ class ChatHandler(QWidget, object):
         self.structure[channel][sub_channel].remove(user)
 
         self.structure[new_channel][new_sub_channel].append(user)
+        if self.current_channel in (channel, new_channel):
+            self.setSubChannels.emit(self.structure[self.current_channel], False)
 
     def get_user_position(self, user):
         for channel in self.structure.keys():
