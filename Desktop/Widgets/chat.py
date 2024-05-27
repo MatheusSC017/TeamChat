@@ -111,6 +111,10 @@ class ChatHandler(QWidget, object):
                 elif action == 'disconnect':
                     self.messageReceived.emit(f'{message_json["datetime"]} - {message_json["user"]} disconnected',
                                               'Global')
+                    channel, sub_channel = self.get_user_position(message_json["user"])
+                    self.structure[channel][sub_channel].remove(message_json['user'])
+                    if self.current_channel == channel:
+                        self.setSubChannels.emit(self.structure['Global'], False)
 
                 elif action == 'join':
                     self.messageReceived.emit(f'{message_json["user"]} joined {message_json["channel"]} / '
