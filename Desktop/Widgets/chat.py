@@ -79,6 +79,7 @@ class ChatHandler(QWidget, object):
         self.update_structure(channel, sub_channel, self.user)
 
     async def update_username(self, username: str) -> None:
+        self.update_username_structure(self.user, username)
         self.user = username
         await self.websocket.send_json({'action': 'update_username', 'username': username})
 
@@ -101,6 +102,7 @@ class ChatHandler(QWidget, object):
 
                 message_json = message.json()
                 action = message_json.get('action')
+
                 if action == 'connect':
                     self.messageReceived.emit(f'{message_json["datetime"]} - {message_json["user"]} connected',
                                               'Global')
@@ -114,7 +116,7 @@ class ChatHandler(QWidget, object):
                     channel, sub_channel = self.get_user_position(message_json["user"])
                     self.structure[channel][sub_channel].remove(message_json['user'])
                     if self.current_channel == channel:
-                        self.setSubChannels.emit(self.structure['Global'], False)
+                        self.setSubChannels.emit(self.structure[channel], False)
 
                 elif action == 'join':
                     self.messageReceived.emit(f'{message_json["user"]} joined {message_json["channel"]} / '
@@ -131,9 +133,10 @@ class ChatHandler(QWidget, object):
                     self.messageReceived.emit(f'{message_json["old_username"]} updated your name to '
                                               f'{message_json["new_username"]}',
                                               'Local')
+                    self.update_username_structure(message_json['old_username'], message_json['new_username'])
 
                 elif action == 'user_list':
-                    self.usersOnline.emit(message_json["user_list"])
+                    self.usersOnline.emit(message_json['user_list'])
 
                 elif action == 'get_structure':
                     self.structure = message_json["structure"]
@@ -155,6 +158,13 @@ class ChatHandler(QWidget, object):
 
             except (json.JSONDecodeError, KeyError) as e:
                 self.logger.error(f"Error processing message: {e}")
+
+    def update_username_structure(self, old_username, new_username):
+        channel, sub_channel = self.get_user_position(old_username)
+        self.structure[channel][sub_channel].remove(old_username)
+        self.structure[channel][sub_channel].append(new_username)
+        if self.current_channel == channel:
+            self.setSubChannels.emit(self.structure[channel], False)
 
     def update_structure(self, new_channel, new_sub_channel, user):
         channel, sub_channel = self.get_user_position(user)

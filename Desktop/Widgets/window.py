@@ -59,7 +59,7 @@ class MainWindowUI(QMainWindow, base.BaseWidget):
         main_menu = QMenu("Main", self)
         menubar.addMenu(main_menu)
 
-        self.connect_menu = QAction("Connect", self)
+        self.connect_menu = QAction("Connect")
         self.username_menu = QAction("Change Username")
         self.users_online_menu = QAction("Users")
         self.username_menu.setDisabled(True)
