@@ -95,6 +95,17 @@ class ChatHandler(QWidget, object):
                                             'datetime': datetime.now().strftime('%d/%m/%Y %H:%M:%S')})
 
     async def subscribe_to_messages(self) -> None:
+        actions = {
+            'connect': self.connect_action,
+            'disconnect': self.disconnect_action,
+            'join': self.join_action,
+            'update_username': self.update_username_action,
+            'user_list': self.user_list_action,
+            'get_structure': self.get_structure_action,
+            'chat_message': self.chat_message_action,
+            'direct_message': self.direct_message_action,
+        }
+
         async for message in self.websocket:
             try:
                 if not isinstance(message, WSMessage) or message.type != WSMsgType.text:
@@ -103,61 +114,63 @@ class ChatHandler(QWidget, object):
                 message_json = message.json()
                 action = message_json.get('action')
 
-                if action == 'connect':
-                    self.messageReceived.emit(f'{message_json["datetime"]} - {message_json["user"]} connected',
-                                              'Global')
-                    self.structure['Global']['Logs'].append(message_json['user'])
-                    if self.current_channel == 'Global':
-                        self.setSubChannels.emit(self.structure['Global'], False)
-
-                elif action == 'disconnect':
-                    self.messageReceived.emit(f'{message_json["datetime"]} - {message_json["user"]} disconnected',
-                                              'Global')
-                    channel, sub_channel = self.get_user_position(message_json["user"])
-                    self.structure[channel][sub_channel].remove(message_json['user'])
-                    if self.current_channel == channel:
-                        self.setSubChannels.emit(self.structure[channel], False)
-
-                elif action == 'join':
-                    self.messageReceived.emit(f'{message_json["user"]} joined {message_json["channel"]} / '
-                                              f'{message_json["sub_channel"]}',
-                                              'Global')
-                    if self.current_channel == message_json["channel"] and \
-                       self.current_sub_channel == message_json["sub_channel"]:
-                        self.messageReceived.emit(f'{message_json["user"]} joined {message_json["channel"]} / '
-                                                  f'{message_json["sub_channel"]}',
-                                                  'Local')
-                    self.update_structure(message_json["channel"], message_json["sub_channel"], message_json["user"])
-
-                elif action == 'update_username':
-                    self.messageReceived.emit(f'{message_json["old_username"]} updated your name to '
-                                              f'{message_json["new_username"]}',
-                                              'Local')
-                    self.update_username_structure(message_json['old_username'], message_json['new_username'])
-
-                elif action == 'user_list':
-                    self.usersOnline.emit(message_json['user_list'])
-
-                elif action == 'get_structure':
-                    self.structure = message_json["structure"]
-                    self.setChannels.emit(list(self.structure.keys()))
-                    self.get_sub_channels('Global')
-
-                elif action == 'chat_message':
-                    self.messageReceived.emit(f'{message_json["datetime"]} - '
-                                              f'{message_json["user"]}: {message_json["message"]}',
-                                              'Local')
-
-                elif action == 'direct_message':
-                    self.messageReceived.emit(f'{message_json["datetime"]} - '
-                                              f'{message_json["user"]}: {message_json["message"]}',
-                                              message_json["user"])
-
+                if action in actions.keys():
+                    actions[action](message_json)
                 else:
                     print(f"Unknown action received: {action}")
 
             except (json.JSONDecodeError, KeyError) as e:
                 self.logger.error(f"Error processing message: {e}")
+
+    def connect_action(self, message_json):
+        self.messageReceived.emit(f'{message_json["datetime"]} - {message_json["user"]} connected',
+                                  'Global')
+        self.structure['Global']['Logs'].append(message_json['user'])
+        if self.current_channel == 'Global':
+            self.setSubChannels.emit(self.structure['Global'], False)
+
+    def disconnect_action(self, message_json):
+        self.messageReceived.emit(f'{message_json["datetime"]} - {message_json["user"]} disconnected',
+                                  'Global')
+        channel, sub_channel = self.get_user_position(message_json["user"])
+        self.structure[channel][sub_channel].remove(message_json['user'])
+        if self.current_channel == channel:
+            self.setSubChannels.emit(self.structure[channel], False)
+
+    def join_action(self, message_json):
+        self.messageReceived.emit(f'{message_json["user"]} joined {message_json["channel"]} / '
+                                  f'{message_json["sub_channel"]}',
+                                  'Global')
+        if self.current_channel == message_json["channel"] and \
+            self.current_sub_channel == message_json["sub_channel"]:
+            self.messageReceived.emit(f'{message_json["user"]} joined {message_json["channel"]} / '
+                                      f'{message_json["sub_channel"]}',
+                                      'Local')
+        self.update_structure(message_json["channel"], message_json["sub_channel"], message_json["user"])
+
+    def update_username_action(self, message_json):
+        self.messageReceived.emit(f'{message_json["old_username"]} updated your name to '
+                                  f'{message_json["new_username"]}',
+                                  'Local')
+        self.update_username_structure(message_json['old_username'], message_json['new_username'])
+
+    def user_list_action(self, message_json):
+        self.usersOnline.emit(message_json['user_list'])
+
+    def get_structure_action(self, message_json):
+        self.structure = message_json["structure"]
+        self.setChannels.emit(list(self.structure.keys()))
+        self.get_sub_channels('Global')
+
+    def chat_message_action(self, message_json):
+        self.messageReceived.emit(f'{message_json["datetime"]} - '
+                                  f'{message_json["user"]}: {message_json["message"]}',
+                                  'Local')
+
+    def direct_message_action(self, message_json):
+        self.messageReceived.emit(f'{message_json["datetime"]} - '
+                                  f'{message_json["user"]}: {message_json["message"]}',
+                                  message_json["user"])
 
     def update_username_structure(self, old_username, new_username):
         channel, sub_channel = self.get_user_position(old_username)
