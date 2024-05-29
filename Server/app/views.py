@@ -60,10 +60,7 @@ async def index(request):
                         await get_sub_channels(request, ws_current, message_json.get('channel'))
 
                     elif action == 'user_list':
-                        user_list = sorted(list(request.app['user_list'].keys()))
-                        user_list.pop(user_list.index(username))
-                        await ws_current.send_json({'action': 'user_list',
-                                                    'user_list': user_list})
+                        await get_user_list(request, ws_current)
 
                     elif action == 'join':
                         await join(request, ws_current, username, message_json.get('channel'), message_json.get('sub_channel'))
@@ -137,6 +134,13 @@ async def get_sub_channels(request, ws_current, channel):
                     for sub_channel in request.app['websockets'][channel].keys()}
     await ws_current.send_json({'action': 'get_sub_channels',
                                 'sub_channels': sub_channels})
+
+
+async def get_user_list(request, ws_current):
+    user_list = sorted(list(request.app['user_list'].keys()))
+    user_list.pop(user_list.index(username))
+    await ws_current.send_json({'action': 'user_list',
+                                'user_list': user_list})
 
 
 async def join(request, ws_current, username, channel, sub_channel):

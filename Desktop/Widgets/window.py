@@ -70,8 +70,7 @@ class MainWindowUI(QMainWindow, base.BaseWidget):
         main_menu.addAction(self.users_online_menu)
 
     def get_messages_ui(self):
-        self.log_chat = QTextEdit()
-        self.log_chat.setReadOnly(True)
+        self.log_chat = self.create_chat_widget()
 
         self.tabs = QTabWidget()
         self.tabs.addTab(self.log_chat, 'Logs')
@@ -318,8 +317,7 @@ class Home(MainWindowUI):
             self.sub_channel_chat = None
 
         if self.chat_handler.current_sub_channel != 'Logs':
-            self.sub_channel_chat = QTextEdit()
-            self.sub_channel_chat.setReadOnly(True)
+            self.sub_channel_chat = self.create_chat_widget()
 
             self.tabs.insertTab(1, self.sub_channel_chat, self.chat_handler.current_sub_channel)
             self.tabs.setCurrentIndex(1)
@@ -352,8 +350,7 @@ class Home(MainWindowUI):
             self.sub_channel_chat.append(message)
         else:
             if recipient not in self.direct_chats.keys():
-                self.direct_chats[recipient] = QTextEdit()
-                self.direct_chats[recipient].setReadOnly(True)
+                self.direct_chats[recipient] = self.create_chat_widget()
 
                 index = self.tabs.addTab(self.direct_chats[recipient], recipient)
                 self.tabs.setCurrentIndex(index)
@@ -362,11 +359,15 @@ class Home(MainWindowUI):
     def start_direct_chat(self):
         username = self.sender().username
         if username not in self.direct_chats.keys():
-            self.direct_chats[username] = QTextEdit()
-            self.direct_chats[username].setReadOnly(True)
+            self.direct_chats[username] = self.create_chat_widget()
 
             self.tabs.addTab(self.direct_chats[username], username)
         self.tabs.setCurrentIndex(self.tabs.indexOf(self.direct_chats[username]))
+
+    def create_chat_widget(self):
+        chat = QTextEdit()
+        chat.setReadOnly(True)
+        return chat
 
     def enable_send_message(self):
         if self.chat_handler.current_channel == 'Global':
