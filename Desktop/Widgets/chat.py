@@ -79,8 +79,6 @@ class ChatHandler(QWidget, object):
         self.update_structure(channel, sub_channel, self.user)
 
     async def update_username(self, username: str) -> None:
-        self.update_username_structure(self.user, username)
-        self.user = username
         await self.websocket.send_json({'action': 'update_username', 'username': username})
 
     async def send_input_message(self, message: str, recipient: str = None) -> None:
@@ -100,6 +98,8 @@ class ChatHandler(QWidget, object):
             'disconnect': self.disconnect_action,
             'join': self.join_action,
             'update_username': self.update_username_action,
+            'updated_username': self.updated_username_action,
+            'invalid_username': self.invalid_username_action,
             'user_list': self.user_list_action,
             'get_structure': self.get_structure_action,
             'chat_message': self.chat_message_action,
@@ -153,6 +153,13 @@ class ChatHandler(QWidget, object):
                                   f'{message_json["new_username"]}',
                                   'Local')
         self.update_username_structure(message_json['old_username'], message_json['new_username'])
+
+    def updated_username_action(self, message_json):
+        self.update_username_structure(self.user, message_json['username'])
+        self.user = message_json['username']
+
+    def invalid_username_action(self, message_json):
+        print("Username already in use")
 
     def user_list_action(self, message_json):
         self.usersOnline.emit(message_json['user_list'])

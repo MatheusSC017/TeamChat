@@ -60,7 +60,7 @@ async def index(request):
                         await get_sub_channels(request, ws_current, message_json.get('channel'))
 
                     elif action == 'user_list':
-                        await get_user_list(request, ws_current)
+                        await get_user_list(request, ws_current, username)
 
                     elif action == 'join':
                         await join(request, ws_current, username, message_json.get('channel'), message_json.get('sub_channel'))
@@ -136,7 +136,7 @@ async def get_sub_channels(request, ws_current, channel):
                                 'sub_channels': sub_channels})
 
 
-async def get_user_list(request, ws_current):
+async def get_user_list(request, ws_current, username):
     user_list = sorted(list(request.app['user_list'].keys()))
     user_list.pop(user_list.index(username))
     await ws_current.send_json({'action': 'user_list',
@@ -187,8 +187,12 @@ async def update_username(request, ws_current, old_username, new_username):
             'new_username': new_username,
         }
         await global_broadcast(request, ws_current, content)
+        await ws_current.send_json({'action': 'updated_username',
+                                    'username': new_username})
 
         return new_username
+
+    await ws_current.send_json({'action': 'invalid_username'})
 
 
 async def chat_message(request, ws_current, username, datetime, message):
