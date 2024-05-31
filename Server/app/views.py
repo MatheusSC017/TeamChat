@@ -7,8 +7,8 @@ import aiohttp
 from utils import local_broadcast, global_broadcast
 
 log = logging.getLogger(__name__)
-actions = {'connect', 'disconnect', 'chat_message', 'get_structure', 'join',
-           'update_username', 'user_list', 'direct_message'}
+actions = {'connect', 'disconnect', 'chat_message', 'get_structure', 'join', 'update_username', 'user_list',
+           'direct_message'}
 
 
 async def index(request):

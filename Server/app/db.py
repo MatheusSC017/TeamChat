@@ -32,16 +32,28 @@ class ChatCollection(MongoDB):
         self._collection_name = 'Chats'
 
     async def get_channels(self):
-        return await self.collection.find().to_list(length=None)
+        channels = await self.collection.find().to_list(length=None)
+
+        channels = {channel['Channel']: {sub_channel: {} for sub_channel in channel['SubChannels']}
+                    for channel in channels}
+
+        return channels
 
 
 if __name__ == '__main__':
     import asyncio
 
+    channels = {
+        "Global": {
+            'Logs': {}
+        }
+    }
+
     async def main():
         chat = ChatCollection()
-        channels = await chat.get_channels()
+        channels.update(await chat.get_channels())
 
         print(channels)
+
 
     asyncio.run(main())

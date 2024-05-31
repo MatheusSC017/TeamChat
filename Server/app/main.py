@@ -1,32 +1,12 @@
 import logging
-import asyncio
 
 from aiohttp import web
 from views import index
+from db import ChatCollection
 
-
-rooms = {
+channels = {
     "Global": {
-        "Logs": {}
-    },
-    "League of Legends": {
-        "Arena": {},
-        "ARAM": {},
-        "Clash": {},
-    },
-    "Age of empires III": {
-        "Duel": {},
-        "Casual Games": {},
-        "Ranked": {},
-    },
-    "Age of mitology": {
-        "Duel": {},
-        "Casual Games": {},
-    },
-    "Lethal Company": {
-        "Team 1": {},
-        "Team 2": {},
-        "Team 3": {},
+        'Logs': {}
     }
 }
 
@@ -34,7 +14,9 @@ rooms = {
 async def init_app():
     app = web.Application()
 
-    app['websockets'] = rooms
+    app['chat_collection'] = ChatCollection()
+    channels.update(await app['chat_collection'].get_channels())
+    app['websockets'] = channels
     app['user_list'] = {}
 
     app.router.add_get('/', index)
