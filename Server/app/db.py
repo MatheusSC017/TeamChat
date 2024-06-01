@@ -40,6 +40,16 @@ class ChatCollection(MongoDB):
         return channels
 
 
+class UserCollection(MongoDB):
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+        self._collection_name = 'Users'
+
+    async def get_users(self):
+        users = await self.collection.find().to_list(length=None)
+        return users
+
+
 if __name__ == '__main__':
     import asyncio
 
