@@ -5,12 +5,14 @@ from PyQt6.QtWidgets import (
     QVBoxLayout,
     QLineEdit,
     QPushButton,
+    QDialog
 )
 from dotenv import load_dotenv
 import requests
 import os
 
 from Widgets.base import BaseWidget, BaseFormWindow
+from Widgets.dialogs import WarningDialog
 
 load_dotenv()
 
@@ -95,8 +97,11 @@ class RegisterUser(BaseWidget):
             'username': self.username.text(),
             'password': self.password.text(),
         }
-        requests.post(url, data=user_data)
+        response = requests.post(url, data=user_data)
+        if response.status_code == 201:
+            self.username.clear()
+            self.password.clear()
+            self.hide()
 
-        self.username.clear()
-        self.password.clear()
-        self.hide()
+        dlg = WarningDialog(self, "User register error" if response.status_code != 201 else "User registered")
+        dlg.exec()

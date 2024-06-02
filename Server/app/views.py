@@ -13,8 +13,11 @@ actions = {'connect', 'disconnect', 'chat_message', 'get_structure', 'join', 'up
 
 async def add_user(request):
     user_credentials = await request.post()
-    await request.app['user_collection'].add_user(user_credentials['username'], user_credentials['password'])
-    return web.Response(status=200)
+    result = await request.app['user_collection'].add_user(user_credentials['username'], user_credentials['password'])
+    if result.inserted_id:
+        return web.Response(status=201)
+
+    return web.Response(status=400)
 
 
 async def index(request):

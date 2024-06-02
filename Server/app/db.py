@@ -52,7 +52,7 @@ class UserCollection(MongoDB):
             'username': username,
             'password': self.hash_password(password)
         }
-        self.collection.insert_one(user_document)
+        return await self.collection.insert_one(user_document)
 
     async def get_users(self):
         users = await self.collection.find().to_list(length=None)
