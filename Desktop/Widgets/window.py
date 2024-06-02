@@ -20,7 +20,7 @@ from threading import Thread
 from datetime import datetime
 import time
 import asyncio
-from Widgets import buttons, chat, base, connect, username, users
+from Widgets import buttons, chat, base, connect, users
 
 
 class MainWindowUI(QMainWindow, base.BaseWidget):
@@ -39,8 +39,9 @@ class MainWindowUI(QMainWindow, base.BaseWidget):
 
     def initUI(self):
         self.connect_window = connect.Connect(self.base_path, self.screen_size)
-        self.username_window = username.UpdateUsername(self.base_path, self.screen_size)
+        self.username_window = users.UpdateUsername(self.base_path, self.screen_size)
         self.users_online_window = users.UsersOnline(self.base_path, self.screen_size)
+        self.user_register_window = users.RegisterUser(self.base_path, self.screen_size)
 
         self.get_menu_ui()
 
@@ -68,6 +69,12 @@ class MainWindowUI(QMainWindow, base.BaseWidget):
         main_menu.addAction(self.connect_menu)
         main_menu.addAction(self.username_menu)
         main_menu.addAction(self.users_online_menu)
+
+        user_menu = QMenu("User", self)
+        menubar.addMenu(user_menu)
+        self.register_menu = QAction("Register")
+
+        user_menu.addAction(self.register_menu)
 
     def get_messages_ui(self):
         self.log_chat = self.create_chat_widget()
@@ -173,6 +180,7 @@ class Home(MainWindowUI):
         self.connect_menu.triggered.connect(self.start_end_connection)
         self.username_menu.triggered.connect(self.update_username_ui)
         self.users_online_menu.triggered.connect(self.open_users_online_window)
+        self.register_menu.triggered.connect(self.open_user_register)
 
         # Sub window components
         self.connect_window.closeSign.connect(self.close_connect_window)
@@ -248,6 +256,9 @@ class Home(MainWindowUI):
 
     def open_users_online_window(self):
         self.users_online_window.show()
+
+    def open_user_register(self):
+        self.user_register_window.show()
 
     @pyqtSlot(list)
     def set_users_online(self, users_online):

@@ -1,10 +1,37 @@
+from PyQt6.QtCore import pyqtSignal
 from PyQt6.QtWidgets import (
     QWidget,
     QLabel,
     QVBoxLayout,
+    QLineEdit,
+    QPushButton,
 )
+from dotenv import load_dotenv
+import requests
+import os
 
-from Widgets.base import BaseWidget
+from Widgets.base import BaseWidget, BaseFormWindow
+
+load_dotenv()
+
+HOST = os.environ.get("HOST")
+PORT = os.environ.get("PORT")
+
+
+class UpdateUsername(BaseFormWindow):
+    updateUsername = pyqtSignal(str)
+
+    def __init__(self, *args, **kwargs):
+        self.window_name = "Change username"
+
+        super().__init__(*args, **kwargs)
+
+        self.form_button.clicked.connect(self.connect_request)
+        self.username_edit.returnPressed.connect(self.connect_request)
+
+    def connect_request(self):
+        user = self.username_edit.text()
+        self.updateUsername.emit(user)
 
 
 class UsersOnline(BaseWidget):
@@ -16,9 +43,7 @@ class UsersOnline(BaseWidget):
         self.setStyleCSS(base_path / "Static/CSS/users.css")
 
     def settings(self, screen_size):
-        self.setFixedWidth(300)
-        self.setFixedHeight(700)
-        self.set_geometry_center(300, 700, screen_size, width_modifier=650)
+        self.set_geometry_center(300, 700, screen_size, width_modifier=650, fixed=True)
 
     def initUI(self):
         title = QLabel("Users online")
@@ -35,3 +60,43 @@ class UsersOnline(BaseWidget):
         master.addWidget(users_online)
 
         self.setLayout(master)
+
+
+class RegisterUser(BaseWidget):
+    def __init__(self, base_path, screen_size):
+        super().__init__()
+
+        self.settings(screen_size)
+        self.initUI()
+        self.setStyleCSS(base_path / "Static/CSS/users.css")
+
+    def settings(self, screen_size):
+        self.set_geometry_center(400, 150, screen_size, fixed=True)
+
+    def initUI(self):
+        self.username = QLineEdit()
+        self.password = QLineEdit()
+        self.password.setEchoMode(QLineEdit.EchoMode.Password)
+        self.register_button = QPushButton("Register")
+        self.register_button.clicked.connect(self.register_user)
+
+        master = QVBoxLayout()
+        master.addWidget(QLabel("Username"))
+        master.addWidget(self.username)
+        master.addWidget(QLabel("Password"))
+        master.addWidget(self.password)
+        master.addWidget(self.register_button)
+
+        self.setLayout(master)
+
+    def register_user(self):
+        url = f'{HOST}:{PORT}/register_user/'
+        user_data = {
+            'username': self.username.text(),
+            'password': self.password.text(),
+        }
+        requests.post(url, data=user_data)
+
+        self.username.clear()
+        self.password.clear()
+        self.hide()

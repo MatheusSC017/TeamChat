@@ -21,7 +21,7 @@ async def init_app():
     app['user_list'] = {}
 
     app.router.add_get('/', index)
-    app.router.add_post('/add_user/', add_user)
+    app.router.add_post('/register_user/', add_user)
 
     app.on_shutdown.append(shutdown)
 

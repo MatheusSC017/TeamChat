@@ -12,7 +12,11 @@ class BaseWidget(QWidget):
         with open(css_file_path, "r") as css:
             self.setStyleSheet(css.read())
 
-    def set_geometry_center(self, width, height, screen_size, width_modifier=0, height_modifier=0):
+    def set_geometry_center(self, width, height, screen_size, width_modifier=0, height_modifier=0, fixed=False):
+        if fixed:
+            self.setFixedWidth(width)
+            self.setFixedHeight(height)
+
         window_center_x = (screen_size.width() - width) // 2
         window_center_y = (screen_size.height() - height) // 2
         self.setGeometry(window_center_x + width_modifier, window_center_y + height_modifier, width, height)
@@ -36,11 +40,11 @@ class BaseFormWindow(BaseWidget):
 
     def initUI(self):
         self.username_edit = QLineEdit()
-        self.connect_button = QPushButton(self.window_name)
+        self.form_button = QPushButton(self.window_name)
 
         master = QVBoxLayout()
         master.addWidget(QLabel("Username"))
         master.addWidget(self.username_edit)
-        master.addWidget(self.connect_button)
+        master.addWidget(self.form_button)
 
         self.setLayout(master)
