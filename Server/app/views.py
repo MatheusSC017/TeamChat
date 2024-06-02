@@ -11,6 +11,12 @@ actions = {'connect', 'disconnect', 'chat_message', 'get_structure', 'join', 'up
            'direct_message'}
 
 
+async def add_user(request):
+    user_credentials = await request.post()
+    await request.app['user_collection'].add_user(user_credentials['username'], user_credentials['password'])
+    return web.Response(status=200)
+
+
 async def index(request):
     username = None
     ws_current = web.WebSocketResponse()

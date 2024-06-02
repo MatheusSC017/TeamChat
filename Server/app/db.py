@@ -1,4 +1,6 @@
 from motor import motor_asyncio
+import hashlib
+import os
 from settings import MONGODB_URI
 
 
@@ -45,13 +47,27 @@ class UserCollection(MongoDB):
         super().__init__(*args, **kwargs)
         self._collection_name = 'Users'
 
+    async def add_user(self, username, password):
+        user_document = {
+            'username': username,
+            'password': self.hash_password(password)
+        }
+        self.collection.insert_one(user_document)
+
     async def get_users(self):
         users = await self.collection.find().to_list(length=None)
         return users
 
+    @staticmethod
+    def hash_password(password):
+        salt = os.urandom(16)
+        password_hash = hashlib.sha256(salt + password.encode())
+        return salt + password_hash.digest()
+
 
 if __name__ == '__main__':
     import asyncio
+    import time
 
     channels = {
         "Global": {
@@ -62,8 +78,12 @@ if __name__ == '__main__':
     async def main():
         chat = ChatCollection()
         channels.update(await chat.get_channels())
-
         print(channels)
 
+        user = UserCollection()
+        await user.add_user('Matheus', '12345678')
+        time.sleep(3)
+        users = await user.get_users()
+        print(users)
 
     asyncio.run(main())
