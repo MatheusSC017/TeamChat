@@ -54,20 +54,31 @@ class UserCollection(MongoDB):
         }
         return await self.collection.insert_one(user_document)
 
+    async def authencation(self, username, password):
+        user = await self.collection.find_one({'username': username})
+        salt = user['password'][0:16]
+        return user['password'] == self.hash_password(password, salt)
+
     async def get_users(self):
         users = await self.collection.find().to_list(length=None)
         return users
 
     @staticmethod
-    def hash_password(password):
-        salt = os.urandom(16)
-        password_hash = hashlib.sha256(salt + password.encode())
-        return salt + password_hash.digest()
+    def hash_password(password, salt=None):
+        if salt is None:
+            salt = os.urandom(16)
+        interations = int(1e5)
+        password_hash = hashlib.pbkdf2_hmac(
+            'sha256',
+            password.encode('utf-8'),
+            salt,
+            interations
+        )
+        return salt + password_hash
 
 
 if __name__ == '__main__':
     import asyncio
-    import time
 
     channels = {
         "Global": {
@@ -82,8 +93,9 @@ if __name__ == '__main__':
 
         user = UserCollection()
         await user.add_user('Matheus', '12345678')
-        time.sleep(3)
         users = await user.get_users()
         print(users)
+
+        await user.authencation('Matheus', '12345678')
 
     asyncio.run(main())
