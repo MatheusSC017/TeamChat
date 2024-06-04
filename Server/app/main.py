@@ -1,8 +1,9 @@
 import logging
 
 from aiohttp import web
-from views import index, add_user
+import views
 from db import ChatCollection, UserCollection
+from tokens import UserToken
 
 channels = {
     "Global": {
@@ -14,14 +15,20 @@ channels = {
 async def init_app():
     app = web.Application()
 
+    app['tokens'] = UserToken
+
     app['user_collection'] = UserCollection()
     app['chat_collection'] = ChatCollection()
+
     channels.update(await app['chat_collection'].get_channels())
     app['websockets'] = channels
+
     app['user_list'] = {}
 
-    app.router.add_get('/', index)
-    app.router.add_post('/register_user/', add_user)
+    app.router.add_get('/', views.index)
+    app.router.add_post('/register_user/', views.register_user)
+    app.router.add_post('/login/', views.log_in)
+    app.router.add_post('/logout/', views.log_out)
 
     app.on_shutdown.append(shutdown)
 

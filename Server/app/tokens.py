@@ -9,6 +9,7 @@ class UserToken:
     def add_user(self, username):
         token = secrets.token_bytes(64)
         self.redis_conn.set(token, username)
+        return token
 
     def del_user(self, token):
         _, user_exist = self.authenticate(token)

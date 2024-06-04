@@ -11,13 +11,41 @@ actions = {'connect', 'disconnect', 'chat_message', 'get_structure', 'join', 'up
            'direct_message'}
 
 
-async def add_user(request):
+async def register_user(request):
     user_credentials = await request.post()
+    if 'username' not in user_credentials.keys() or 'password' not in user_credentials.keys():
+        return web.Response(status=400)
+
     result = await request.app['user_collection'].add_user(user_credentials['username'], user_credentials['password'])
     if result.inserted_id:
         return web.Response(status=201)
 
     return web.Response(status=400)
+
+
+async def log_in(request):
+    user_credentials = await request.post()
+    if 'username' not in user_credentials.keys() or 'password' not in user_credentials.keys():
+        return web.Response(status=400)
+
+    authenticated = await request.app['user_collection'].authenticate(user_credentials['username'],
+                                                                      user_credentials['password'])
+    if authenticated:
+        token = request.app['tokens'].add_user(user_credentials['username'])
+        return web.Response(body={'token': token}, status=200)
+
+    return web.Response(status=401)
+
+
+async def log_out(request):
+    user_credentials = await request.post()
+    if 'token' not in user_credentials.keys():
+        return web.Response(status=400)
+
+    logged_out = request.app['tokens'].del_user(user_credentials['token'])
+    if logged_out:
+        return web.Response(status=200)
+    return web.Response(status=401)
 
 
 async def index(request):

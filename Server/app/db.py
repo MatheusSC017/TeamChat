@@ -54,7 +54,7 @@ class UserCollection(MongoDB):
         }
         return await self.collection.insert_one(user_document)
 
-    async def authencation(self, username, password):
+    async def authenticate(self, username, password):
         user = await self.collection.find_one({'username': username})
         salt = user['password'][0:16]
         return user['password'] == self.hash_password(password, salt)
@@ -96,6 +96,6 @@ if __name__ == '__main__':
         users = await user.get_users()
         print(users)
 
-        print(await user.authencation('Matheus', '12345678'))
+        print(await user.authenticate('Matheus', '12345678'))
 
     asyncio.run(main())
