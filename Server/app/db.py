@@ -96,6 +96,6 @@ if __name__ == '__main__':
         users = await user.get_users()
         print(users)
 
-        await user.authencation('Matheus', '12345678')
+        print(await user.authencation('Matheus', '12345678'))
 
     asyncio.run(main())
