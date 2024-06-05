@@ -3,6 +3,7 @@ import logging
 
 from aiohttp import web
 import aiohttp
+import json
 
 from utils import local_broadcast, global_broadcast
 
@@ -16,11 +17,12 @@ async def register_user(request):
     if 'username' not in user_credentials.keys() or 'password' not in user_credentials.keys():
         return web.Response(status=400)
 
-    result = await request.app['user_collection'].add_user(user_credentials['username'], user_credentials['password'])
-    if result.inserted_id:
+    inserted, result = await request.app['user_collection'].add_user(user_credentials['username'],
+                                                                     user_credentials['password'])
+    if inserted:
         return web.Response(status=201)
 
-    return web.Response(status=400)
+    return web.Response(body=json.dumps({'errors': result}), status=400)
 
 
 async def log_in(request):

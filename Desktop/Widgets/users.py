@@ -102,6 +102,8 @@ class RegisterUser(BaseWidget):
             self.username.clear()
             self.password.clear()
             self.hide()
+            dlg = WarningDialog(self, "User registered")
+        else:
+            dlg = WarningDialog(self, "User register error", response.json()['errors'])
 
-        dlg = WarningDialog(self, "User register error" if response.status_code != 201 else "User registered")
         dlg.exec()
