@@ -1,6 +1,8 @@
 from motor import motor_asyncio
 import hashlib
 import os
+
+from validations import validate_password
 from settings import MONGODB_URI
 
 
@@ -48,11 +50,24 @@ class UserCollection(MongoDB):
         self._collection_name = 'Users'
 
     async def add_user(self, username, password):
-        user_document = {
-            'username': username,
-            'password': self.hash_password(password)
-        }
-        return await self.collection.insert_one(user_document)
+        users = await self.get_users()
+        users = [user['username'] for user in users]
+
+        errors = []
+        if username in users:
+            errors.append("Username already in use")
+
+        if not validate_password(password):
+            errors.append("The password must contain 8 characters or more, consisting of at least one uppercase letter,"
+                          " one lowercase letter, a number and a special character")
+
+        if len(errors) == 0:
+            user_document = {
+                'username': username,
+                'password': self.hash_password(password)
+            }
+            return True, await self.collection.insert_one(user_document)
+        return False, errors
 
     async def authenticate(self, username, password):
         user = await self.collection.find_one({'username': username})
@@ -89,13 +104,22 @@ if __name__ == '__main__':
     async def main():
         chat = ChatCollection()
         channels.update(await chat.get_channels())
+        print('Channels')
         print(channels)
+        print('*' * 40)
 
         user = UserCollection()
-        await user.add_user('Matheus', '12345678')
-        users = await user.get_users()
-        print(users)
+        print('Register User')
+        print(await user.add_user('Matheus', 'P@ssw0rd'))
+        print('*' * 40)
 
-        print(await user.authenticate('Matheus', '12345678'))
+        users = await user.get_users()
+        print('Users')
+        print(users)
+        print('*' * 40)
+
+        print('Authenticate')
+        print(await user.authenticate('Matheus', 'P@ssw0rd'))
+        print('*' * 40)
 
     asyncio.run(main())
