@@ -15,7 +15,7 @@ channels = {
 async def init_app():
     app = web.Application()
 
-    app['tokens'] = UserToken
+    app['tokens'] = UserToken()
 
     app['user_collection'] = UserCollection()
     app['chat_collection'] = ChatCollection()

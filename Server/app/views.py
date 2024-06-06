@@ -34,7 +34,7 @@ async def log_in(request):
                                                                       user_credentials['password'])
     if authenticated:
         token = request.app['tokens'].add_user(user_credentials['username'])
-        return web.Response(body={'token': token}, status=200)
+        return web.Response(body=json.dumps({'token': token.decode('iso-8859-1')}), status=200)
 
     return web.Response(status=401)
 
