@@ -7,7 +7,6 @@ from PyQt6.QtWidgets import (
     QPushButton,
 )
 from dotenv import load_dotenv
-import secretstorage
 import requests
 import os
 
@@ -126,6 +125,8 @@ class RegisterUser(UserForm):
 
 
 class LogIn(UserForm):
+    logged_in_user = pyqtSignal()
+
     def __init__(self, *args, **kwargs):
         self.form_name = "Log In"
         self.url = f'{HOST}:{PORT}/login/'
@@ -134,9 +135,4 @@ class LogIn(UserForm):
     def send_request(self):
         response_content = super().send_request()
 
-        connection = secretstorage.dbus_init()
-        collection = secretstorage.get_default_collection(connection)
-        attributes = {'application': 'teamchat', }
-
-        item = collection.create_item('token', attributes, response_content['token'].encode())
-        return item
+        self.logged_in_user.emit()

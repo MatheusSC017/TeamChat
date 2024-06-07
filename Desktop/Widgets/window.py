@@ -75,9 +75,12 @@ class MainWindowUI(QMainWindow, base.BaseWidget):
         menubar.addMenu(user_menu)
         self.register_menu = QAction("Register")
         self.login_menu = QAction("Login")
+        self.logout_menu = QAction("Logout")
+        self.logout_menu.setVisible(False)
 
         user_menu.addAction(self.register_menu)
         user_menu.addAction(self.login_menu)
+        user_menu.addAction(self.logout_menu)
 
     def get_messages_ui(self):
         self.log_chat = self.create_chat_widget()
@@ -201,6 +204,9 @@ class Home(MainWindowUI):
         self.chat_handler.setSubChannels.connect(self.set_sub_channels)
         self.chat_handler.usersOnline.connect(self.set_users_online)
 
+        # Login
+        self.login_window.logged_in_user.connect(self.logged_in_user_menu)
+
     def start_end_connection(self):
         self.create_connect_window() if not self.connected else self.end_chat()
 
@@ -266,6 +272,16 @@ class Home(MainWindowUI):
 
     def open_login_ui(self):
         self.login_window.show()
+
+    def logged_in_user_menu(self):
+        self.register_menu.setVisible(False)
+        self.login_menu.setVisible(False)
+        self.logout_menu.setVisible(True)
+
+    def logged_out_user_menu(self):
+        self.register_menu.setVisible(True)
+        self.login_menu.setVisible(True)
+        self.logout_menu.setVisible(False)
 
     @pyqtSlot(list)
     def set_users_online(self, users_online):
