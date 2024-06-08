@@ -136,3 +136,35 @@ class LogIn(UserForm):
         response_content = super().send_request()
 
         self.logged_in_user.emit()
+
+
+class AccountConfig(BaseWidget):
+    def __init__(self, base_path, screen_size):
+        super().__init__()
+
+        self.settings(screen_size)
+        self.initUI()
+        self.setStyleCSS(base_path / "Static/CSS/users.css")
+
+    def settings(self, screen_size):
+        self.setWindowTitle('My Account')
+        self.set_geometry_center(500, 300, screen_size, fixed=True)
+
+    def initUI(self):
+        self.username = QLineEdit()
+        self.nickname = QLineEdit()
+        self.email = QLineEdit()
+        self.update_account = QPushButton('Update account')
+        self.update_password = QPushButton('Update password')
+
+        master = QVBoxLayout()
+        master.addWidget(QLabel("Username"))
+        master.addWidget(self.username)
+        master.addWidget(QLabel("Nickname"))
+        master.addWidget(self.nickname)
+        master.addWidget(QLabel("E-mail"))
+        master.addWidget(self.email)
+        master.addWidget(self.update_account)
+        master.addWidget(self.update_password)
+
+        self.setLayout(master)

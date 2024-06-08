@@ -43,6 +43,7 @@ class MainWindowUI(QMainWindow, base.BaseWidget):
         self.users_online_window = users.UsersOnline(self.base_path, self.screen_size)
         self.user_register_window = users.RegisterUser(self.base_path, self.screen_size)
         self.login_window = users.LogIn(self.base_path, self.screen_size)
+        self.account_config_window = users.AccountConfig(self.base_path, self.screen_size)
 
         self.get_menu_ui()
 
@@ -75,11 +76,17 @@ class MainWindowUI(QMainWindow, base.BaseWidget):
         menubar.addMenu(user_menu)
         self.register_menu = QAction("Register")
         self.login_menu = QAction("Login")
+        self.account_menu = QAction("Account")
+        self.account_menu.setVisible(False)
+        self.my_channels_menu = QAction("My channels")
+        self.my_channels_menu.setVisible(False)
         self.logout_menu = QAction("Logout")
         self.logout_menu.setVisible(False)
 
         user_menu.addAction(self.register_menu)
         user_menu.addAction(self.login_menu)
+        user_menu.addAction(self.account_menu)
+        user_menu.addAction(self.my_channels_menu)
         user_menu.addAction(self.logout_menu)
 
     def get_messages_ui(self):
@@ -188,6 +195,8 @@ class Home(MainWindowUI):
         self.users_online_menu.triggered.connect(self.open_users_online_window)
         self.register_menu.triggered.connect(self.open_user_register_ui)
         self.login_menu.triggered.connect(self.open_login_ui)
+        self.account_menu.triggered.connect(self.open_account_window)
+        self.logout_menu.triggered.connect(self.logged_out_user_menu)
 
         # Sub window components
         self.connect_window.closeSign.connect(self.close_connect_window)
@@ -276,11 +285,18 @@ class Home(MainWindowUI):
     def logged_in_user_menu(self):
         self.register_menu.setVisible(False)
         self.login_menu.setVisible(False)
+        self.account_menu.setVisible(True)
+        self.my_channels_menu.setVisible(True)
         self.logout_menu.setVisible(True)
+
+    def open_account_window(self):
+        self.account_config_window.show()
 
     def logged_out_user_menu(self):
         self.register_menu.setVisible(True)
         self.login_menu.setVisible(True)
+        self.account_menu.setVisible(False)
+        self.my_channels_menu.setVisible(False)
         self.logout_menu.setVisible(False)
 
     @pyqtSlot(list)
