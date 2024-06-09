@@ -22,4 +22,4 @@ class UserToken:
         username = self.redis_conn.get(token)
         if username is None:
             return '', False
-        return username, True
+        return username.decode(), True

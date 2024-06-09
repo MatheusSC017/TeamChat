@@ -1,10 +1,11 @@
 from datetime import datetime
-import logging
-
 from aiohttp import web
+import logging
 import aiohttp
 import json
+import base64
 
+from bson import json_util
 from utils import local_broadcast, global_broadcast
 
 log = logging.getLogger(__name__)
@@ -34,7 +35,7 @@ async def log_in(request):
                                                                       user_credentials['password'])
     if authenticated:
         token = request.app['tokens'].add_user(user_credentials['username'])
-        return web.Response(body=json.dumps({'token': token.decode('iso-8859-1')}), status=200)
+        return web.Response(body=json.dumps({'token': base64.b64encode(token).decode('ascii')}), status=200)
 
     return web.Response(status=401)
 
@@ -47,6 +48,15 @@ async def log_out(request):
     logged_out = request.app['tokens'].del_user(user_credentials['token'])
     if logged_out:
         return web.Response(status=200)
+    return web.Response(status=401)
+
+
+async def retrieve_user(request):
+    access_token = request.headers.get('Authorization')
+    username, authenticated = request.app['tokens'].authenticate(base64.b64decode(access_token))
+    if authenticated:
+        user = await request.app['user_collection'].get_user(username)
+        return web.Response(body=json_util.dumps(user), status=200)
     return web.Response(status=401)
 
 

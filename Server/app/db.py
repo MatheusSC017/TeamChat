@@ -70,9 +70,12 @@ class UserCollection(MongoDB):
         return False, errors
 
     async def authenticate(self, username, password):
-        user = await self.collection.find_one({'username': username})
+        user = await self.get_user(username)
         salt = user['password'][0:16]
         return user['password'] == self.hash_password(password, salt)
+
+    async def get_user(self, username):
+        return await self.collection.find_one({'username': username})
 
     async def get_users(self):
         users = await self.collection.find().to_list(length=None)
