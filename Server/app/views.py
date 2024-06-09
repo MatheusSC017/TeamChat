@@ -56,6 +56,7 @@ async def retrieve_user(request):
     username, authenticated = request.app['tokens'].authenticate(base64.b64decode(access_token))
     if authenticated:
         user = await request.app['user_collection'].get_user(username)
+        del user['password']
         return web.Response(body=json_util.dumps(user), status=200)
     return web.Response(status=401)
 

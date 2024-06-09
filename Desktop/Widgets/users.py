@@ -9,6 +9,7 @@ from PyQt6.QtWidgets import (
 from dotenv import load_dotenv
 import requests
 import os
+import keyring
 
 from Widgets.base import BaseWidget, BaseFormWindow
 from Widgets.dialogs import WarningDialog
@@ -135,7 +136,10 @@ class LogIn(UserForm):
     def send_request(self):
         response_content = super().send_request()
 
-        self.logged_in_user.emit()
+        if response_content.get('token'):
+            keyring.set_password('system', 'token', response_content['token'])
+
+            self.logged_in_user.emit()
 
 
 class AccountConfig(BaseWidget):
@@ -168,3 +172,16 @@ class AccountConfig(BaseWidget):
         master.addWidget(self.update_password)
 
         self.setLayout(master)
+
+    def show(self) -> None:
+        super().show()
+        token = keyring.get_password('system', 'token')
+        headers = {
+            'Authorization': token
+        }
+        response = requests.get(f'{HOST}:{PORT}/retrieve_user/', headers=headers)
+        if response.status_code == 200:
+            data = response.json()
+            self.username.setText(data.get('username', ''))
+            self.nickname.setText(data.get('nickname', ''))
+            self.email.setText(data.get('email', ''))
