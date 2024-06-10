@@ -36,8 +36,11 @@ class ChatCollection(MongoDB):
         super().__init__(*args, **kwargs)
         self._collection_name = 'Chats'
 
-    async def get_channels(self):
-        channels = await self.collection.find().to_list(length=None)
+    async def get_channels(self, owner=None):
+        if owner:
+            channels = await self.collection.find({'owner': owner}).to_list(length=None)
+        else:
+            channels = await self.collection.find().to_list(length=None)
 
         channels = {channel['Channel']: {sub_channel: {} for sub_channel in channel['SubChannels']}
                     for channel in channels}

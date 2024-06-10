@@ -74,6 +74,15 @@ async def retrieve_user(request):
     return web.Response(status=401)
 
 
+async def retrieve_channels(request):
+    access_token = request.headers.get('Authorization')
+    username, authenticated = request.app['tokens'].authenticate(base64.b64decode(access_token))
+    if authenticated:
+        channels = await request.app['chat_collection'].get_channels(owner=username)
+        return web.Response(body=json_util.dumps(channels), status=200)
+    return web.Response(status=401)
+
+
 async def index(request):
     username = None
     ws_current = web.WebSocketResponse()

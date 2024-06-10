@@ -31,6 +31,7 @@ async def init_app():
     app.router.add_post('/login/', views.log_in)
     app.router.add_post('/logout/', views.log_out)
     app.router.add_get('/retrieve_user/', views.retrieve_user)
+    app.router.add_get('/retrieve_channels/', views.retrieve_channels)
 
     app.on_shutdown.append(shutdown)
 
