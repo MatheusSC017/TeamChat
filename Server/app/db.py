@@ -1,8 +1,9 @@
 from motor import motor_asyncio
 import hashlib
 import os
+import inspect
 
-from validations import validate_password
+from validations import validate_password, validate_email, validate_nickname
 from settings import MONGODB_URI
 
 
@@ -50,16 +51,7 @@ class UserCollection(MongoDB):
         self._collection_name = 'Users'
 
     async def add_user(self, username, password):
-        users = await self.get_users()
-        users = [user['username'] for user in users]
-
-        errors = []
-        if username in users:
-            errors.append("Username already in use")
-
-        if not validate_password(password):
-            errors.append("The password must contain 8 characters or more, consisting of at least one uppercase letter,"
-                          " one lowercase letter, a number and a special character")
+        errors = await self.validate_fields(username=username, password=password)
 
         if len(errors) == 0:
             user_document = {
@@ -67,6 +59,17 @@ class UserCollection(MongoDB):
                 'password': self.hash_password(password)
             }
             return True, await self.collection.insert_one(user_document)
+        return False, errors
+
+    async def update_user(self, username, new_values):
+        user_data = await self.get_user(username)
+        errors = await self.validate_fields(user=user_data, **new_values)
+
+        if len(errors) == 0:
+            user_filter = {
+                'username': username,
+            }
+            return True, await self.collection.update_one(user_filter, {'$set': new_values})
         return False, errors
 
     async def authenticate(self, username, password):
@@ -93,6 +96,36 @@ class UserCollection(MongoDB):
             interations
         )
         return salt + password_hash
+
+    async def validate_fields(self, user=None, **kwargs):
+        validations = {
+            'username': [self.validate_username, "Username already in use"],
+            'password': [validate_password, "The password must contain 8 characters or more, consisting of at least one"
+                                            " uppercase letter, one lowercase letter, a number and a special character"],
+            'email': [validate_email, "Enter a valid email in the format email@provider.com"],
+            'nickname': [validate_nickname, "The nickname must contain at least 4 characters"],
+        }
+        errors = []
+        for field, value in kwargs.items():
+            if field not in validations.keys():
+                errors.append(f"{field} is not a valid field")
+
+            validation, error_message = validations[field]
+
+            if inspect.iscoroutinefunction(validation):
+                valid_field = await validation(value, user_data=user or {})
+            else:
+                valid_field = validation(value, user_data=user or {})
+
+            if not valid_field:
+                errors.append(error_message)
+
+        return errors
+
+    async def validate_username(self, username, user_data={}):
+        users = await self.get_users()
+        users = [user['username'] for user in users]
+        return user_data.get('username') == username or username not in users
 
 
 if __name__ == '__main__':

@@ -158,8 +158,9 @@ class AccountConfig(BaseWidget):
         self.username = QLineEdit()
         self.nickname = QLineEdit()
         self.email = QLineEdit()
-        self.update_account = QPushButton('Update account')
-        self.update_password = QPushButton('Update password')
+        self.update_account_button = QPushButton('Update account')
+        self.update_account_button.clicked.connect(self.update_account)
+        self.update_password_button = QPushButton('Update password')
 
         master = QVBoxLayout()
         master.addWidget(QLabel("Username"))
@@ -168,10 +169,29 @@ class AccountConfig(BaseWidget):
         master.addWidget(self.nickname)
         master.addWidget(QLabel("E-mail"))
         master.addWidget(self.email)
-        master.addWidget(self.update_account)
-        master.addWidget(self.update_password)
+        master.addWidget(self.update_account_button)
+        master.addWidget(self.update_password_button)
 
         self.setLayout(master)
+
+    def update_account(self):
+        token = keyring.get_password('system', 'token')
+        headers = {
+            'Authorization': token
+        }
+        user_data = {
+            'username': self.username.text(),
+            'nickname': self.nickname.text(),
+            'email': self.email.text(),
+        }
+        response = requests.post(f'{HOST}:{PORT}/update_user/', data=user_data, headers=headers)
+        if response.status_code == 202:
+            self.hide()
+            dlg = WarningDialog(self, "User updated")
+        else:
+            dlg = WarningDialog(self, "Fail")
+
+        dlg.exec()
 
     def show(self) -> None:
         super().show()

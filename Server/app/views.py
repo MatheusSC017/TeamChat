@@ -26,6 +26,19 @@ async def register_user(request):
     return web.Response(body=json.dumps({'errors': result}), status=400)
 
 
+async def update_user(request):
+    access_token = request.headers.get('Authorization')
+    username, authenticated = request.app['tokens'].authenticate(base64.b64decode(access_token))
+    if not authenticated:
+        return web.Response(status=401)
+
+    user_data = await request.post()
+    updated, _ = await request.app['user_collection'].update_user(username, user_data)
+    if updated:
+        return web.Response(status=202)
+    return web.Response(status=500)
+
+
 async def log_in(request):
     user_credentials = await request.post()
     if 'username' not in user_credentials.keys() or 'password' not in user_credentials.keys():
@@ -41,8 +54,8 @@ async def log_in(request):
 
 
 async def log_out(request):
-    user_credentials = await request.post()
-    if 'token' not in user_credentials.keys():
+    access_token = request.headers.get('Authorization')
+    if access_token is None:
         return web.Response(status=400)
 
     logged_out = request.app['tokens'].del_user(user_credentials['token'])
