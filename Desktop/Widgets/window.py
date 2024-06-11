@@ -20,7 +20,7 @@ from threading import Thread
 from datetime import datetime
 import time
 import asyncio
-from Widgets import buttons, chat, base, connect, users
+from Widgets import buttons, chat, base, connect, users, channels
 
 
 class MainWindowUI(QMainWindow, base.BaseWidget):
@@ -44,6 +44,7 @@ class MainWindowUI(QMainWindow, base.BaseWidget):
         self.user_register_window = users.RegisterUser(self.base_path, self.screen_size)
         self.login_window = users.LogIn(self.base_path, self.screen_size)
         self.account_config_window = users.AccountConfig(self.base_path, self.screen_size)
+        self.my_channels_window = channels.MyChannels(self.base_path, self.screen_size)
 
         self.get_menu_ui()
 
@@ -196,6 +197,7 @@ class Home(MainWindowUI):
         self.register_menu.triggered.connect(self.open_user_register_ui)
         self.login_menu.triggered.connect(self.open_login_ui)
         self.account_menu.triggered.connect(self.open_account_window)
+        self.my_channels_menu.triggered.connect(self.open_my_channels_window)
         self.logout_menu.triggered.connect(self.logged_out_user_menu)
 
         # Sub window components
@@ -291,6 +293,9 @@ class Home(MainWindowUI):
 
     def open_account_window(self):
         self.account_config_window.show()
+
+    def open_my_channels_window(self):
+        self.my_channels_window.show()
 
     def logged_out_user_menu(self):
         self.register_menu.setVisible(True)
