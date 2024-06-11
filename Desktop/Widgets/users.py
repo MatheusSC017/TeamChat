@@ -83,8 +83,10 @@ class UserForm(BaseWidget):
 
     def initUI(self):
         self.username = QLineEdit()
+        self.username.returnPressed.connect(self.send_request)
         self.password = QLineEdit()
         self.password.setEchoMode(QLineEdit.EchoMode.Password)
+        self.password.returnPressed.connect(self.send_request)
         self.send_form = QPushButton(self.form_name)
         self.send_form.clicked.connect(self.send_request)
 
