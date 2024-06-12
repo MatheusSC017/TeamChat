@@ -42,7 +42,7 @@ class ChatCollection(MongoDB):
         else:
             channels = await self.collection.find().to_list(length=None)
 
-        channels = {channel['Channel']: {sub_channel: {} for sub_channel in channel['SubChannels']}
+        channels = {channel['Channel']: {field: value for field, value in channel.items() if field not in ['_id', 'Channel']}
                     for channel in channels}
 
         return channels

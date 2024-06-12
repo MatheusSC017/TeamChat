@@ -7,7 +7,10 @@ from tokens import UserToken
 
 channels = {
     "Global": {
-        'Logs': {}
+        'SubChannels': {
+            'Logs': {}
+        },
+        'owner': 'system'
     }
 }
 
@@ -22,7 +25,6 @@ async def init_app():
 
     channels.update(await app['chat_collection'].get_channels())
     app['websockets'] = channels
-
     app['user_list'] = {}
 
     app.router.add_get('/', views.index)
