@@ -3,13 +3,13 @@ QLabel#title {
     font-weight: bold;
 }
 
-QLabel#channel {
+QLabel#subtitle {
     font-size: 20px;
     font-weight: bold;
     margin-bottom: 20px;
 }
 
-QLabel#sub_channel {
+QLabel#subtitle2 {
     font-size: 15px;
     text_align: center;
 }
