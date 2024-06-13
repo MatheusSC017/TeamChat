@@ -24,7 +24,7 @@ class ChannelUpdate(BaseWidget):
         self.base_path = base_path
 
         self.settings(screen_size)
-        self.initUI(channel, sub_channels)
+        self.initUI(channel, sub_channels.keys())
         self.setStyleCSS(base_path / "Static/CSS/channels.css")
 
     def settings(self, screen_size):
@@ -63,7 +63,7 @@ class ChannelButton(QAbstractButton, BaseWidget):
         self.sub_channels = sub_channels
 
         self.settings()
-        self.initUI(channel, sub_channels)
+        self.initUI(channel, sub_channels.keys())
         self.setStyleCSS(base_path / "Static/CSS/channels.css")
 
     def settings(self):
@@ -142,7 +142,7 @@ class MyChannels(BaseWidget):
         if response.status_code == 200:
             self.channels = response.json()
             for channel, sub_channels in self.channels.items():
-                channel_button = ChannelButton(channel, sub_channels['SubChannels'].keys(), self.base_path)
+                channel_button = ChannelButton(channel, sub_channels, self.base_path)
                 channel_button.clicked.connect(self.open_channel_config)
                 self.channels_layout.addWidget(channel_button)
 

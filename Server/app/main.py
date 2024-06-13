@@ -7,10 +7,7 @@ from tokens import UserToken
 
 channels = {
     "Global": {
-        'SubChannels': {
-            'Logs': {}
-        },
-        'owner': 'system'
+        'Logs': {}
     }
 }
 
@@ -24,9 +21,21 @@ async def init_app():
     app['chat_collection'] = ChatCollection()
 
     channels.update(await app['chat_collection'].get_channels())
+    for channel in channels.keys():
+        for sub_channel in channels[channel].keys():
+            channels[channel][sub_channel]['Users'] = {}
+
     app['websockets'] = channels
     app['user_list'] = {}
 
+    set_routes(app)
+
+    app.on_shutdown.append(shutdown)
+
+    return app
+
+
+def set_routes(app):
     app.router.add_get('/', views.index)
     app.router.add_post('/register_user/', views.register_user)
     app.router.add_post('/update_user/', views.update_user)
@@ -34,10 +43,6 @@ async def init_app():
     app.router.add_post('/logout/', views.log_out)
     app.router.add_get('/retrieve_user/', views.retrieve_user)
     app.router.add_get('/retrieve_channels/', views.retrieve_channels)
-
-    app.on_shutdown.append(shutdown)
-
-    return app
 
 
 async def shutdown(app):
