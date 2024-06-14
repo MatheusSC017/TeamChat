@@ -7,6 +7,23 @@ from PyQt6.QtWidgets import (
 )
 
 
+class LabeledLineEdit(QWidget):
+    def __init__(self, label):
+        super().__init__()
+
+        self.initUI(label)
+
+    def initUI(self, label):
+        master = QVBoxLayout()
+
+        self.label = QLabel(label)
+        master.addWidget(self.label)
+        self.line_edit = QLineEdit()
+        master.addWidget(self.line_edit)
+
+        self.setLayout(master)
+
+
 class BaseWidget(QWidget):
     def setStyleCSS(self, css_file_path):
         with open(css_file_path, "r") as css:

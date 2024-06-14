@@ -4,9 +4,12 @@ from PyQt6.QtWidgets import (
     QHBoxLayout,
     QAbstractButton,
     QScrollArea,
-    QWidget
+    QWidget,
+    QLineEdit,
+    QPushButton
 )
-from Widgets.base import BaseWidget
+from PyQt6.QtGui import QIntValidator
+from Widgets.base import BaseWidget, LabeledLineEdit
 from dotenv import load_dotenv
 import keyring
 import requests
@@ -18,13 +21,64 @@ HOST = os.environ.get("HOST")
 PORT = os.environ.get("PORT")
 
 
+class SubChannelConfig(QWidget):
+    def __init__(self, sub_channel, configs):
+        super().__init__()
+        self.initUI(sub_channel, configs)
+
+    def initUI(self, sub_channel, configs):
+        sub_channel_title = QLabel(sub_channel)
+        sub_channel_title.setObjectName('subtitle')
+
+        password_row = QHBoxLayout()
+        self.enable_password = QPushButton("Enable password")
+        self.enable_password.setCheckable(True)
+        self.enable_password.setFixedWidth(200)
+        self.enable_password.setFixedHeight(50)
+        password_row.addWidget(self.enable_password)
+        password_row.addStretch()
+        self.password = LabeledLineEdit("Password")
+        self.password.setFixedWidth(300)
+        self.password.line_edit.setEchoMode(QLineEdit.EchoMode.Password)
+        self.password.setEnabled(False)
+        password_row.addWidget(self.password)
+
+        capacity_row = QHBoxLayout()
+        self.limit_users = QPushButton("Limit Users")
+        self.limit_users.setCheckable(True)
+        self.limit_users.setFixedWidth(200)
+        self.limit_users.setFixedHeight(50)
+        capacity_row.addWidget(self.limit_users)
+        capacity_row.addStretch()
+        self.number_of_users = LabeledLineEdit("Number of Users")
+        self.number_of_users.setFixedWidth(300)
+        self.number_of_users.setEnabled(False)
+        self.number_of_users.line_edit.setValidator(QIntValidator(2, 99))
+        capacity_row.addWidget(self.number_of_users)
+
+        users_row = QHBoxLayout()
+        self.only_logged_in_users = QPushButton("Only Logged In Users")
+        self.only_logged_in_users.setCheckable(True)
+        self.only_logged_in_users.setFixedWidth(200)
+        self.only_logged_in_users.setFixedHeight(50)
+        users_row.addWidget(self.only_logged_in_users)
+        users_row.addStretch()
+
+        master = QVBoxLayout()
+        master.addWidget(sub_channel_title)
+        master.addLayout(password_row)
+        master.addLayout(capacity_row)
+        master.addLayout(users_row)
+        self.setLayout(master)
+
+
 class ChannelUpdate(BaseWidget):
     def __init__(self, channel, sub_channels, base_path, screen_size):
         super().__init__()
         self.base_path = base_path
 
         self.settings(screen_size)
-        self.initUI(channel, sub_channels.keys())
+        self.initUI(channel, sub_channels)
         self.setStyleCSS(base_path / "Static/CSS/channels.css")
 
     def settings(self, screen_size):
@@ -36,9 +90,8 @@ class ChannelUpdate(BaseWidget):
         title.setObjectName('title')
 
         sub_channels_layout = QVBoxLayout()
-        for sub_channel in sub_channels:
-            sub_channel_widget = QLabel(sub_channel)
-            sub_channel_widget.setObjectName('subtitle')
+        for sub_channel, configs in sub_channels.items():
+            sub_channel_widget = SubChannelConfig(sub_channel, configs)
             sub_channels_layout.addWidget(sub_channel_widget)
 
         container = QWidget()
