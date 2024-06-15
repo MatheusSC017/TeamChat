@@ -32,28 +32,33 @@ class SubChannelConfig(QWidget):
 
         password_row = QHBoxLayout()
         self.enable_password = QPushButton("Enable password")
+        self.enable_password.clicked.connect(self.enable_password_field)
         self.enable_password.setCheckable(True)
         self.enable_password.setFixedWidth(200)
         self.enable_password.setFixedHeight(50)
+        self.enable_password.setChecked(configs.get('enable_password', 0) == 1)
         password_row.addWidget(self.enable_password)
         password_row.addStretch()
         self.password = LabeledLineEdit("Password")
         self.password.setFixedWidth(300)
         self.password.line_edit.setEchoMode(QLineEdit.EchoMode.Password)
-        self.password.setEnabled(False)
+        self.password.setEnabled(self.enable_password.isChecked())
         password_row.addWidget(self.password)
 
         capacity_row = QHBoxLayout()
         self.limit_users = QPushButton("Limit Users")
+        self.limit_users.clicked.connect(self.enable_number_of_users_field)
         self.limit_users.setCheckable(True)
         self.limit_users.setFixedWidth(200)
         self.limit_users.setFixedHeight(50)
+        self.limit_users.setChecked(configs.get('limit_users', 0) == 1)
         capacity_row.addWidget(self.limit_users)
         capacity_row.addStretch()
         self.number_of_users = LabeledLineEdit("Number of Users")
         self.number_of_users.setFixedWidth(300)
-        self.number_of_users.setEnabled(False)
+        self.number_of_users.setEnabled(self.limit_users.isChecked())
         self.number_of_users.line_edit.setValidator(QIntValidator(2, 99))
+        self.number_of_users.line_edit.setText(str(configs.get('number_of_users', 0)))
         capacity_row.addWidget(self.number_of_users)
 
         users_row = QHBoxLayout()
@@ -61,6 +66,7 @@ class SubChannelConfig(QWidget):
         self.only_logged_in_users.setCheckable(True)
         self.only_logged_in_users.setFixedWidth(200)
         self.only_logged_in_users.setFixedHeight(50)
+        self.only_logged_in_users.setChecked(configs.get('only_logged_in_users', 0) == 1)
         users_row.addWidget(self.only_logged_in_users)
         users_row.addStretch()
 
@@ -70,6 +76,18 @@ class SubChannelConfig(QWidget):
         master.addLayout(capacity_row)
         master.addLayout(users_row)
         self.setLayout(master)
+
+    def enable_password_field(self):
+        if self.enable_password.isChecked():
+            self.password.setEnabled(True)
+        else:
+            self.password.setEnabled(False)
+
+    def enable_number_of_users_field(self):
+        if self.limit_users.isChecked():
+            self.number_of_users.setEnabled(True)
+        else:
+            self.number_of_users.setEnabled(False)
 
 
 class ChannelUpdate(BaseWidget):

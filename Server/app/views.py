@@ -79,6 +79,10 @@ async def retrieve_channels(request):
     username, authenticated = request.app['tokens'].authenticate(base64.b64decode(access_token))
     if authenticated:
         channels = await request.app['chat_collection'].get_channels(owner=username)
+        for channel in channels.keys():
+            for sub_channel in channels[channel].keys():
+                if 'password' in channels[channel][sub_channel].keys():
+                    del channels[channel][sub_channel]['password']
         return web.Response(body=json_util.dumps(channels), status=200)
     return web.Response(status=401)
 
