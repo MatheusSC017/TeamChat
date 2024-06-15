@@ -186,7 +186,7 @@ class AccountConfig(BaseWidget):
             'nickname': self.nickname.text(),
             'email': self.email.text(),
         }
-        response = requests.post(f'{HOST}:{PORT}/update_user/', data=user_data, headers=headers)
+        response = requests.put(f'{HOST}:{PORT}/update_user/', data=user_data, headers=headers)
         if response.status_code == 202:
             self.hide()
             dlg = WarningDialog(self, "User updated")

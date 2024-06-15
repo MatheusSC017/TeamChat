@@ -47,6 +47,10 @@ class ChatCollection(MongoDB):
 
         return channels
 
+    async def update_channel(self, channel, sub_channels):
+        user_filter = {'Channel': channel}
+        return True, await self.collection.update_one(user_filter, {'$set': {'SubChannels': sub_channels}})
+
 
 class UserCollection(MongoDB):
     def __init__(self, *args, **kwargs):

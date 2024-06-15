@@ -37,12 +37,13 @@ async def init_app():
 
 def set_routes(app):
     app.router.add_get('/', views.index)
-    app.router.add_post('/register_user/', views.register_user)
-    app.router.add_post('/update_user/', views.update_user)
+    app.router.add_post('/user/register/', views.register_user)
+    app.router.add_put('/user/update/', views.update_user)
+    app.router.add_get('/user/retrieve/', views.retrieve_user)
     app.router.add_post('/login/', views.log_in)
     app.router.add_post('/logout/', views.log_out)
-    app.router.add_get('/retrieve_user/', views.retrieve_user)
-    app.router.add_get('/retrieve_channels/', views.retrieve_channels)
+    app.router.add_get('/channel/retrieve/', views.retrieve_channels)
+    app.router.add_put('/channel/update/', views.update_channel)
 
 
 async def shutdown(app):
