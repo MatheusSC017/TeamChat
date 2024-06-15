@@ -81,6 +81,8 @@ class UserCollection(MongoDB):
 
     async def authenticate(self, username, password):
         user = await self.get_user(username)
+        if not user:
+            return False
         salt = user['password'][0:16]
         return user['password'] == self.hash_password(password, salt)
 

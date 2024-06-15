@@ -24,6 +24,7 @@ PORT = os.environ.get("PORT")
 class SubChannelConfig(QWidget):
     def __init__(self, sub_channel, configs):
         super().__init__()
+        self.sub_channel = sub_channel
         self.initUI(sub_channel, configs)
 
     def initUI(self, sub_channel, configs):
@@ -36,7 +37,7 @@ class SubChannelConfig(QWidget):
         self.enable_password.setCheckable(True)
         self.enable_password.setFixedWidth(200)
         self.enable_password.setFixedHeight(50)
-        self.enable_password.setChecked(configs.get('enable_password', 0) == 1)
+        self.enable_password.setChecked(configs.get('enable_password', 0))
         password_row.addWidget(self.enable_password)
         password_row.addStretch()
         self.password = LabeledLineEdit("Password")
@@ -51,7 +52,7 @@ class SubChannelConfig(QWidget):
         self.limit_users.setCheckable(True)
         self.limit_users.setFixedWidth(200)
         self.limit_users.setFixedHeight(50)
-        self.limit_users.setChecked(configs.get('limit_users', 0) == 1)
+        self.limit_users.setChecked(configs.get('limit_users', 0))
         capacity_row.addWidget(self.limit_users)
         capacity_row.addStretch()
         self.number_of_users = LabeledLineEdit("Number of Users")
@@ -66,7 +67,7 @@ class SubChannelConfig(QWidget):
         self.only_logged_in_users.setCheckable(True)
         self.only_logged_in_users.setFixedWidth(200)
         self.only_logged_in_users.setFixedHeight(50)
-        self.only_logged_in_users.setChecked(configs.get('only_logged_in_users', 0) == 1)
+        self.only_logged_in_users.setChecked(configs.get('only_logged_in_users', 0))
         users_row.addWidget(self.only_logged_in_users)
         users_row.addStretch()
 
@@ -89,12 +90,30 @@ class SubChannelConfig(QWidget):
         else:
             self.number_of_users.setEnabled(False)
 
+    def get_sub_channel_data(self):
+        sub_channel_config = {
+            'enable_password': self.enable_password.isChecked(),
+            'limit_users': self.limit_users.isChecked(),
+            'only_logged_in_users': self.only_logged_in_users.isChecked(),
+        }
+        if sub_channel_config['enable_password']:
+            sub_channel_config['password'] = self.password.line_edit.text()
+
+        if sub_channel_config['limit_users']:
+            try:
+                sub_channel_config['number_of_users'] = int(self.number_of_users.line_edit.text())
+            except ValueError:
+                sub_channel_config['number_of_users'] = 2
+
+        return self.sub_channel, sub_channel_config
+
 
 class ChannelUpdate(BaseWidget):
     def __init__(self, channel, sub_channels, base_path, screen_size):
         super().__init__()
         self.base_path = base_path
 
+        self.channel = channel
         self.settings(screen_size)
         self.initUI(channel, sub_channels)
         self.setStyleCSS(base_path / "Static/CSS/channels.css")
@@ -107,23 +126,43 @@ class ChannelUpdate(BaseWidget):
         title = QLabel(channel)
         title.setObjectName('title')
 
-        sub_channels_layout = QVBoxLayout()
+        self.sub_channels_layout = QVBoxLayout()
         for sub_channel, configs in sub_channels.items():
             sub_channel_widget = SubChannelConfig(sub_channel, configs)
-            sub_channels_layout.addWidget(sub_channel_widget)
+            self.sub_channels_layout.addWidget(sub_channel_widget)
 
         container = QWidget()
-        container.setLayout(sub_channels_layout)
+        container.setLayout(self.sub_channels_layout)
 
         sub_channels_scroll = QScrollArea()
         sub_channels_scroll.setWidget(container)
         sub_channels_scroll.setWidgetResizable(True)
 
+        update_button = QPushButton('Update')
+        update_button.clicked.connect(self.update_channel)
+
         master = QVBoxLayout()
         master.addWidget(title)
         master.addWidget(sub_channels_scroll)
+        master.addWidget(update_button)
 
         self.setLayout(master)
+
+    def update_channel(self):
+        channel_configs = {
+            'channel': self.channel,
+            'sub_channels': {}
+        }
+        for i in range(self.sub_channels_layout.count()):
+            sub_channel_widget = self.sub_channels_layout.itemAt(i).widget()
+            sub_channel, config = sub_channel_widget.get_sub_channel_data()
+            channel_configs['sub_channels'][sub_channel] = config
+
+        token = keyring.get_password('system', 'token')
+        headers = {
+            'Authorization': token
+        }
+        response = requests.put(f'{HOST}:{PORT}/channel/update/', headers=headers, json=channel_configs)
 
 
 class ChannelButton(QAbstractButton, BaseWidget):
@@ -209,7 +248,7 @@ class MyChannels(BaseWidget):
         headers = {
             'Authorization': token
         }
-        response = requests.get(f'{HOST}:{PORT}/retrieve_channels/', headers=headers)
+        response = requests.get(f'{HOST}:{PORT}/channel/retrieve/', headers=headers)
         if response.status_code == 200:
             self.channels = response.json()
             for channel, sub_channels in self.channels.items():
