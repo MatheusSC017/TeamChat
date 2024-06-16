@@ -190,6 +190,7 @@ class ChannelButton(QAbstractButton, BaseWidget):
     def __init__(self, channel, sub_channels, base_path):
         super().__init__()
 
+        self.base_path = base_path
         self.channel = channel
         self.sub_channels = sub_channels
 
@@ -202,9 +203,22 @@ class ChannelButton(QAbstractButton, BaseWidget):
 
     def initUI(self, channel, sub_channels):
         channel_layout = QVBoxLayout()
+
+        channel_header = QHBoxLayout()
         channel_label = QLabel(channel)
         channel_label.setObjectName('subtitle')
-        channel_layout.addWidget(channel_label)
+        channel_header.addWidget(channel_label)
+
+        delete_channel = QPushButton()
+        delete_channel.setCheckable(True)
+        image = Image.open(self.base_path / "Static/Images/trash.png")
+        pixmap = QPixmap.fromImage(ImageQt(image))
+        delete_channel.setIcon(QIcon(pixmap))
+        delete_channel.setFixedHeight(32)
+        delete_channel.setFixedWidth(32)
+        channel_header.addWidget(delete_channel)
+
+        channel_layout.addLayout(channel_header)
 
         items_count = 0
         sub_channels_layout = QHBoxLayout()
