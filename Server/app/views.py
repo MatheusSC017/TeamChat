@@ -93,6 +93,14 @@ async def retrieve_channels(request):
     return web.Response(status=401)
 
 
+async def delete_sub_channels(request):
+    pass
+
+
+async def delete_channel(request):
+    pass
+
+
 async def update_channel(request):
     access_token = request.headers.get('Authorization', None)
     if access_token is None:

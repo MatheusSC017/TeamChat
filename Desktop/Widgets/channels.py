@@ -8,8 +8,10 @@ from PyQt6.QtWidgets import (
     QLineEdit,
     QPushButton
 )
-from PyQt6.QtGui import QIntValidator
+from PyQt6.QtGui import QIntValidator, QPixmap, QIcon
 from Widgets.base import BaseWidget, LabeledLineEdit
+from PIL.ImageQt import ImageQt
+from PIL import Image
 from dotenv import load_dotenv
 import keyring
 import requests
@@ -22,14 +24,29 @@ PORT = os.environ.get("PORT")
 
 
 class SubChannelConfig(QWidget):
-    def __init__(self, sub_channel, configs):
+    def __init__(self, sub_channel, configs, base_path):
         super().__init__()
+
+        self.base_path = base_path
+
         self.sub_channel = sub_channel
         self.initUI(sub_channel, configs)
 
     def initUI(self, sub_channel, configs):
+        sub_channel_row = QHBoxLayout()
         sub_channel_title = QLabel(sub_channel)
         sub_channel_title.setObjectName('subtitle')
+        sub_channel_row.addWidget(sub_channel_title)
+
+        delete_sub_channel = QPushButton()
+        delete_sub_channel.setCheckable(True)
+        image = Image.open(self.base_path / "Static/Images/trash.png")
+        pixmap = QPixmap.fromImage(ImageQt(image))
+        delete_sub_channel.setIcon(QIcon(pixmap))
+        delete_sub_channel.setFixedHeight(32)
+        delete_sub_channel.setFixedWidth(32)
+
+        sub_channel_row.addWidget(delete_sub_channel)
 
         password_row = QHBoxLayout()
         self.enable_password = QPushButton("Enable password")
@@ -72,7 +89,7 @@ class SubChannelConfig(QWidget):
         users_row.addStretch()
 
         master = QVBoxLayout()
-        master.addWidget(sub_channel_title)
+        master.addLayout(sub_channel_row)
         master.addLayout(password_row)
         master.addLayout(capacity_row)
         master.addLayout(users_row)
@@ -128,7 +145,7 @@ class ChannelUpdate(BaseWidget):
 
         self.sub_channels_layout = QVBoxLayout()
         for sub_channel, configs in sub_channels.items():
-            sub_channel_widget = SubChannelConfig(sub_channel, configs)
+            sub_channel_widget = SubChannelConfig(sub_channel, configs, self.base_path)
             self.sub_channels_layout.addWidget(sub_channel_widget)
 
         container = QWidget()
@@ -138,13 +155,17 @@ class ChannelUpdate(BaseWidget):
         sub_channels_scroll.setWidget(container)
         sub_channels_scroll.setWidgetResizable(True)
 
+        options_row = QHBoxLayout()
         update_button = QPushButton('Update')
         update_button.clicked.connect(self.update_channel)
+        options_row.addWidget(update_button)
+        delete_button = QPushButton('Delete')
+        options_row.addWidget(delete_button)
 
         master = QVBoxLayout()
         master.addWidget(title)
         master.addWidget(sub_channels_scroll)
-        master.addWidget(update_button)
+        master.addLayout(options_row)
 
         self.setLayout(master)
 
