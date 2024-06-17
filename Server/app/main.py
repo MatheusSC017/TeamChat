@@ -44,6 +44,7 @@ def set_routes(app):
     app.router.add_post('/logout/', views.log_out)
     app.router.add_get('/channel/retrieve/', views.retrieve_channels)
     app.router.add_put('/channel/update/', views.update_channel)
+    app.router.add_get('/channel/delete/', views.delete_channel)
 
 
 async def shutdown(app):
