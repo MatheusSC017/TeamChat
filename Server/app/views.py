@@ -93,6 +93,27 @@ async def retrieve_channels(request):
     return web.Response(status=401)
 
 
+async def register_channel(request):
+    access_token = request.headers.get('Authorization', None)
+    if access_token is None:
+        return web.Response(status=400)
+    username, authenticated = request.app['tokens'].authenticate(base64.b64decode(access_token))
+    if not authenticated:
+        return web.Response(status=401)
+
+    channel_data = await request.json()
+    inserted, result = await request.app['chat_collection'].register_channel(channel_data['channel'], username)
+
+    if inserted:
+        return web.Response(status=201)
+
+    return web.Response(body=json.dumps({'errors': result}), status=400)
+
+
+async def update_channel(request):
+    pass
+
+
 async def delete_channel(request):
     access_token = request.headers.get('Authorization', None)
     if access_token is None:
@@ -107,6 +128,10 @@ async def delete_channel(request):
     if deleted:
         return web.Response(status=202)
     return web.Response(status=500)
+
+
+async def register_sub_channels(request):
+    pass
 
 
 async def update_sub_channels(request):

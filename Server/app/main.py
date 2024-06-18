@@ -42,6 +42,7 @@ def set_routes(app):
     app.router.add_get('/user/retrieve/', views.retrieve_user)
     app.router.add_post('/login/', views.log_in)
     app.router.add_post('/logout/', views.log_out)
+    app.router.add_post('/channel/register/', views.register_channel)
     app.router.add_get('/channel/retrieve/', views.retrieve_channels)
     app.router.add_get('/channel/delete/', views.delete_channel)
     app.router.add_put('/channel/sub_channels/update/', views.update_sub_channels)

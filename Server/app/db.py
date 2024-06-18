@@ -36,37 +36,33 @@ class ChatCollection(MongoDB):
         super().__init__(*args, **kwargs)
         self._collection_name = 'Chats'
 
-    async def get_channels(self, owner=None):
-        if owner:
-            channels = await self.collection.find({'owner': owner}).to_list(length=None)
-        else:
-            channels = await self.collection.find().to_list(length=None)
+    async def register_channel(self, channel, owner):
+        channel_data = await self.get_channel(channel, owner)
+        if channel_data is not None:
+            return False, ["This channel name is already in use", ]
 
-        channels = {channel['Channel']: {field: value for field, value in channel['SubChannels'].items()}
-                    for channel in channels}
+        channel_document = {
+            'Channel': channel,
+            'owner': owner
+        }
+        return True, await self.collection.insert_one(channel_document)
 
-        return channels
-
-    async def get_channel(self, channel, owner):
+    async def delete_channel(self, channel, owner):
         channel_filter = {'Channel': channel, 'owner': owner}
-        return await self.collection.find_one(channel_filter)
-
-    async def delete_channel(self, channel, username):
-        channel_filter = {'Channel': channel, 'owner': username}
         result = await self.collection.delete_one(channel_filter)
         if result:
             return True
         return False
 
-    async def update_sub_channels(self, channel, sub_channels, username):
-        channel_filter = {'Channel': channel, 'owner': username}
+    async def update_sub_channels(self, channel, sub_channels, owner):
+        channel_filter = {'Channel': channel, 'owner': owner}
         result = await self.collection.update_one(channel_filter, {'$set': {'SubChannels': sub_channels}})
         if result:
             return True
         return False
 
-    async def delete_sub_channels(self, channel, sub_channels, username):
-        channel_data = await self.get_channel(channel, username)
+    async def delete_sub_channels(self, channel, sub_channels, owner):
+        channel_data = await self.get_channel(channel, owner)
         if channel_data is None:
             return False
         actual_sub_channels = channel_data['SubChannels']
@@ -80,6 +76,23 @@ class ChatCollection(MongoDB):
         if result:
             return True
         return False
+
+    async def get_channels(self, owner=None):
+        if owner:
+            channels = await self.collection.find({'owner': owner}).to_list(length=None)
+        else:
+            channels = await self.collection.find().to_list(length=None)
+
+        channels = {channel['Channel']: {field: value for field, value in channel['SubChannels'].items()}
+                    for channel in channels}
+
+        return channels
+
+    async def get_channel(self, channel, owner=None):
+        channel_filter = {'Channel': channel, }
+        if owner is not None:
+            channel_filter['owner'] = owner
+        return await self.collection.find_one(channel_filter)
 
 
 class UserCollection(MongoDB):
