@@ -47,12 +47,9 @@ class ChatCollection(MongoDB):
 
         return channels
 
-    async def update_channel(self, channel, sub_channels, username):
-        channel_filter = {'Channel': channel, 'owner': username}
-        result = await self.collection.update_one(channel_filter, {'$set': {'SubChannels': sub_channels}})
-        if result:
-            return True
-        return False
+    async def get_channel(self, channel, owner):
+        channel_filter = {'Channel': channel, 'owner': owner}
+        return await self.collection.find_one(channel_filter)
 
     async def delete_channel(self, channel, username):
         channel_filter = {'Channel': channel, 'owner': username}
@@ -61,6 +58,28 @@ class ChatCollection(MongoDB):
             return True
         return False
 
+    async def update_sub_channels(self, channel, sub_channels, username):
+        channel_filter = {'Channel': channel, 'owner': username}
+        result = await self.collection.update_one(channel_filter, {'$set': {'SubChannels': sub_channels}})
+        if result:
+            return True
+        return False
+
+    async def delete_sub_channels(self, channel, sub_channels, username):
+        channel_data = await self.get_channel(channel, username)
+        if channel_data is None:
+            return False
+        actual_sub_channels = channel_data['SubChannels']
+
+        for sub_channel in sub_channels:
+            if sub_channel in actual_sub_channels.keys():
+                del actual_sub_channels[sub_channel]
+
+        channel_filter = {'Channel': channel, 'owner': username}
+        result = await self.collection.update_one(channel_filter, {'$set': {'SubChannels': actual_sub_channels}})
+        if result:
+            return True
+        return False
 
 
 class UserCollection(MongoDB):

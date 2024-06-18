@@ -183,7 +183,7 @@ class ChannelUpdate(BaseWidget):
         headers = {
             'Authorization': token
         }
-        requests.put(f'{HOST}:{PORT}/channel/update/', headers=headers, json=channel_configs)
+        requests.put(f'{HOST}:{PORT}/channel/sub_channels/update/', headers=headers, json=channel_configs)
 
 
 class ChannelButton(QAbstractButton, BaseWidget):

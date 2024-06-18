@@ -93,27 +93,6 @@ async def retrieve_channels(request):
     return web.Response(status=401)
 
 
-async def update_channel(request):
-    access_token = request.headers.get('Authorization', None)
-    if access_token is None:
-        return web.Response(status=400)
-    username, authenticated = request.app['tokens'].authenticate(base64.b64decode(access_token))
-    if not authenticated:
-        return web.Response(status=401)
-
-    channel_data = await request.json()
-    updated = await request.app['chat_collection'].update_channel(channel_data['channel'],
-                                                                  channel_data['sub_channels'],
-                                                                  username)
-    if updated:
-        return web.Response(status=202)
-    return web.Response(status=500)
-
-
-async def delete_sub_channels(request):
-    pass
-
-
 async def delete_channel(request):
     access_token = request.headers.get('Authorization', None)
     if access_token is None:
@@ -128,6 +107,40 @@ async def delete_channel(request):
     if deleted:
         return web.Response(status=202)
     return web.Response(status=500)
+
+
+async def update_sub_channels(request):
+    access_token = request.headers.get('Authorization', None)
+    if access_token is None:
+        return web.Response(status=400)
+    username, authenticated = request.app['tokens'].authenticate(base64.b64decode(access_token))
+    if not authenticated:
+        return web.Response(status=401)
+
+    channel_data = await request.json()
+    updated = await request.app['chat_collection'].update_sub_channels(channel_data['channel'],
+                                                                       channel_data['sub_channels'],
+                                                                       username)
+    if updated:
+        return web.Response(status=202)
+    return web.Response(status=500)
+
+
+async def delete_sub_channels(request):
+    access_token = request.headers.get('Authorization', None)
+    if access_token is None:
+        return web.Response(status=400)
+    username, authenticated = request.app['tokens'].authenticate(base64.b64decode(access_token))
+    if not authenticated:
+        return web.Response(status=401)
+
+    channel = await request.json()
+    deleted = await request.app['chat_collection'].delete_sub_channels(channel['channel'],
+                                                                       channel['sub_channels'],
+                                                                       username)
+    if deleted:
+        return web.Response(status=202)
+    return web.Response(status=400)
 
 
 async def index(request):
