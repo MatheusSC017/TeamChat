@@ -65,13 +65,13 @@ class ChatCollection(MongoDB):
         channel_data = await self.get_channel(channel, owner)
         if channel_data is None:
             return False
-        actual_sub_channels = channel_data['SubChannels']
+        actual_sub_channels = channel_data.get('SubChannels', {})
 
         for sub_channel in sub_channels:
             if sub_channel in actual_sub_channels.keys():
                 del actual_sub_channels[sub_channel]
 
-        channel_filter = {'Channel': channel, 'owner': username}
+        channel_filter = {'Channel': channel, 'owner': owner}
         result = await self.collection.update_one(channel_filter, {'$set': {'SubChannels': actual_sub_channels}})
         if result:
             return True
@@ -83,7 +83,7 @@ class ChatCollection(MongoDB):
         else:
             channels = await self.collection.find().to_list(length=None)
 
-        channels = {channel['Channel']: {field: value for field, value in channel['SubChannels'].items()}
+        channels = {channel['Channel']: {field: value for field, value in channel.get('SubChannels', {}).items()}
                     for channel in channels}
 
         return channels
