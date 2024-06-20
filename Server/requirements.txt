@@ -1,0 +1,4 @@
+aiohttp==3.9.5
+motor==3.4.0
+pymongo==4.7.3
+redis==5.0.6
