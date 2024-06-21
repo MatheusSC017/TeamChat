@@ -210,7 +210,7 @@ class ChannelButton(QAbstractButton, BaseWidget):
         channel_header.addWidget(channel_label)
 
         delete_channel = QPushButton()
-        delete_channel.setCheckable(True)
+        delete_channel.clicked.connect(self.delete_channel)
         image = Image.open(self.base_path / "Static/Images/trash.png")
         pixmap = QPixmap.fromImage(ImageQt(image))
         delete_channel.setIcon(QIcon(pixmap))
@@ -238,6 +238,19 @@ class ChannelButton(QAbstractButton, BaseWidget):
 
     def paintEvent(self, a0, QPaintEvent=None):
         pass
+
+    def delete_channel(self):
+        channel_data = {
+            'channel': self.channel,
+        }
+        token = keyring.get_password('system', 'token')
+        headers = {
+            'Authorization': token
+        }
+        response = requests.get(f'{HOST}:{PORT}/channel/delete/', headers=headers, json=channel_data)
+        print(response.status_code)
+        if response.status_code == 202:
+            self.setParent(None)
 
 
 class MyChannels(BaseWidget):
@@ -285,6 +298,7 @@ class MyChannels(BaseWidget):
         }
         response = requests.get(f'{HOST}:{PORT}/channel/retrieve/', headers=headers)
         if response.status_code == 200:
+            self.clear_layout(self.channels_layout)
             self.channels = response.json()
             for channel, sub_channels in self.channels.items():
                 channel_button = ChannelButton(channel, sub_channels, self.base_path)
@@ -299,3 +313,10 @@ class MyChannels(BaseWidget):
                                                    self.screen_size)
         self.update_channel_window.show()
 
+    @staticmethod
+    def clear_layout(layout):
+        for i in reversed(range(layout.count())):
+            item = layout.itemAt(i)
+            widget = item.widget()
+            widget.setParent(None)
+            layout.removeWidget(widget)
