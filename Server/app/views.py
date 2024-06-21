@@ -126,7 +126,7 @@ async def delete_channel(request):
     deleted = await request.app['chat_collection'].delete_channel(channel['channel'],
                                                                   username)
     if deleted:
-        return web.Response(status=202)
+        return web.Response(status=200)
     return web.Response(status=500)
 
 
@@ -164,7 +164,7 @@ async def delete_sub_channels(request):
                                                                        channel['sub_channels'],
                                                                        username)
     if deleted:
-        return web.Response(status=202)
+        return web.Response(status=200)
     return web.Response(status=400)
 
 

@@ -38,15 +38,15 @@ class SubChannelConfig(QWidget):
         sub_channel_title.setObjectName('subtitle')
         sub_channel_row.addWidget(sub_channel_title)
 
-        delete_sub_channel = QPushButton()
-        delete_sub_channel.setCheckable(True)
+        self.delete_sub_channel = QPushButton()
+        self.delete_sub_channel.setCheckable(True)
         image = Image.open(self.base_path / "Static/Images/trash.png")
         pixmap = QPixmap.fromImage(ImageQt(image))
-        delete_sub_channel.setIcon(QIcon(pixmap))
-        delete_sub_channel.setFixedHeight(32)
-        delete_sub_channel.setFixedWidth(32)
+        self.delete_sub_channel.setIcon(QIcon(pixmap))
+        self.delete_sub_channel.setFixedHeight(32)
+        self.delete_sub_channel.setFixedWidth(32)
 
-        sub_channel_row.addWidget(delete_sub_channel)
+        sub_channel_row.addWidget(self.delete_sub_channel)
 
         password_row = QHBoxLayout()
         self.enable_password = QPushButton("Enable password")
@@ -160,6 +160,7 @@ class ChannelUpdate(BaseWidget):
         update_button.clicked.connect(self.update_channel)
         options_row.addWidget(update_button)
         delete_button = QPushButton('Delete')
+        delete_button.clicked.connect(self.delete_sub_channels)
         options_row.addWidget(delete_button)
 
         master = QVBoxLayout()
@@ -184,6 +185,29 @@ class ChannelUpdate(BaseWidget):
             'Authorization': token
         }
         requests.put(f'{HOST}:{PORT}/channel/sub_channels/update/', headers=headers, json=channel_configs)
+
+    def delete_sub_channels(self):
+        request_data = {
+            'channel': self.channel,
+            'sub_channels': []
+        }
+        token = keyring.get_password('system', 'token')
+        headers = {
+            'Authorization': token
+        }
+        for i in reversed(range(self.sub_channels_layout.count())):
+            sub_channel_widget = self.sub_channels_layout.itemAt(i).widget()
+            if sub_channel_widget.delete_sub_channel.isChecked():
+                request_data['sub_channels'].append(sub_channel_widget.sub_channel)
+
+        response = requests.get(f'{HOST}:{PORT}/channel/sub_channels/delete/', headers=headers, json=request_data)
+
+        if response.status_code == 200:
+            for i in reversed(range(self.sub_channels_layout.count())):
+                sub_channel_widget = self.sub_channels_layout.itemAt(i).widget()
+                if sub_channel_widget.delete_sub_channel.isChecked():
+                    self.sub_channels_layout.removeWidget(sub_channel_widget)
+                    sub_channel_widget.setParent(None)
 
 
 class ChannelButton(QAbstractButton, BaseWidget):
@@ -248,8 +272,7 @@ class ChannelButton(QAbstractButton, BaseWidget):
             'Authorization': token
         }
         response = requests.get(f'{HOST}:{PORT}/channel/delete/', headers=headers, json=channel_data)
-        print(response.status_code)
-        if response.status_code == 202:
+        if response.status_code == 200:
             self.setParent(None)
 
 
