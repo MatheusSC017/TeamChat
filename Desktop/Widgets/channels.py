@@ -34,10 +34,18 @@ class SubChannelConfig(QWidget):
         self.initUI(sub_channel, configs)
 
     def initUI(self, sub_channel, configs):
-        sub_channel_row = QHBoxLayout()
+        master = QVBoxLayout()
+        master.addLayout(self.get_sub_channel_form_ui(sub_channel))
+        master.addLayout(self.get_password_form_ui(configs))
+        master.addLayout(self.get_capacity_form_ui(configs))
+        master.addLayout(self.get_users_form_ui(configs))
+        self.setLayout(master)
+
+    def get_sub_channel_form_ui(self, sub_channel):
+        master = QHBoxLayout()
         sub_channel_title = QLabel(sub_channel)
         sub_channel_title.setObjectName('subtitle')
-        sub_channel_row.addWidget(sub_channel_title)
+        master.addWidget(sub_channel_title)
 
         self.delete_sub_channel = QPushButton()
         self.delete_sub_channel.setCheckable(True)
@@ -47,54 +55,54 @@ class SubChannelConfig(QWidget):
         self.delete_sub_channel.setFixedHeight(32)
         self.delete_sub_channel.setFixedWidth(32)
 
-        sub_channel_row.addWidget(self.delete_sub_channel)
+        master.addWidget(self.delete_sub_channel)
+        return master
 
-        password_row = QHBoxLayout()
+    def get_password_form_ui(self, configs):
+        master = QHBoxLayout()
         self.enable_password = QPushButton("Enable password")
         self.enable_password.clicked.connect(self.enable_password_field)
         self.enable_password.setCheckable(True)
         self.enable_password.setFixedWidth(200)
         self.enable_password.setFixedHeight(50)
         self.enable_password.setChecked(configs.get('enable_password', 0))
-        password_row.addWidget(self.enable_password)
-        password_row.addStretch()
+        master.addWidget(self.enable_password)
+        master.addStretch()
         self.password = LabeledLineEdit("Password")
         self.password.setFixedWidth(300)
         self.password.line_edit.setEchoMode(QLineEdit.EchoMode.Password)
         self.password.setEnabled(self.enable_password.isChecked())
-        password_row.addWidget(self.password)
+        master.addWidget(self.password)
+        return master
 
-        capacity_row = QHBoxLayout()
+    def get_capacity_form_ui(self, configs):
+        master = QHBoxLayout()
         self.limit_users = QPushButton("Limit Users")
         self.limit_users.clicked.connect(self.enable_number_of_users_field)
         self.limit_users.setCheckable(True)
         self.limit_users.setFixedWidth(200)
         self.limit_users.setFixedHeight(50)
         self.limit_users.setChecked(configs.get('limit_users', 0))
-        capacity_row.addWidget(self.limit_users)
-        capacity_row.addStretch()
+        master.addWidget(self.limit_users)
+        master.addStretch()
         self.number_of_users = LabeledLineEdit("Number of Users")
         self.number_of_users.setFixedWidth(300)
         self.number_of_users.setEnabled(self.limit_users.isChecked())
         self.number_of_users.line_edit.setValidator(QIntValidator(2, 99))
         self.number_of_users.line_edit.setText(str(configs.get('number_of_users', 0)))
-        capacity_row.addWidget(self.number_of_users)
+        master.addWidget(self.number_of_users)
+        return master
 
-        users_row = QHBoxLayout()
+    def get_users_form_ui(self, configs):
+        master = QHBoxLayout()
         self.only_logged_in_users = QPushButton("Only Logged In Users")
         self.only_logged_in_users.setCheckable(True)
         self.only_logged_in_users.setFixedWidth(200)
         self.only_logged_in_users.setFixedHeight(50)
         self.only_logged_in_users.setChecked(configs.get('only_logged_in_users', 0))
-        users_row.addWidget(self.only_logged_in_users)
-        users_row.addStretch()
-
-        master = QVBoxLayout()
-        master.addLayout(sub_channel_row)
-        master.addLayout(password_row)
-        master.addLayout(capacity_row)
-        master.addLayout(users_row)
-        self.setLayout(master)
+        master.addWidget(self.only_logged_in_users)
+        master.addStretch()
+        return master
 
     def enable_password_field(self):
         if self.enable_password.isChecked():
@@ -146,6 +154,14 @@ class ChannelUpdate(BaseWidget):
         title = QLabel(channel)
         title.setObjectName('title')
 
+        master = QVBoxLayout()
+        master.addWidget(title)
+        master.addWidget(self.get_sub_channels_area_ui(sub_channels))
+        master.addLayout(self.get_options_menu_ui())
+
+        self.setLayout(master)
+
+    def get_sub_channels_area_ui(self, sub_channels):
         self.sub_channels_layout = QVBoxLayout()
         for sub_channel, configs in sub_channels.items():
             sub_channel_widget = SubChannelConfig(sub_channel, configs, self.base_path)
@@ -157,21 +173,20 @@ class ChannelUpdate(BaseWidget):
         sub_channels_scroll = QScrollArea()
         sub_channels_scroll.setWidget(container)
         sub_channels_scroll.setWidgetResizable(True)
+        return sub_channels_scroll
 
-        options_row = QHBoxLayout()
+    def get_options_menu_ui(self):
+        master = QHBoxLayout()
+
         update_button = QPushButton('Update')
         update_button.clicked.connect(self.update_channel)
-        options_row.addWidget(update_button)
+        master.addWidget(update_button)
+
         delete_button = QPushButton('Delete')
         delete_button.clicked.connect(self.delete_sub_channels)
-        options_row.addWidget(delete_button)
+        master.addWidget(delete_button)
 
-        master = QVBoxLayout()
-        master.addWidget(title)
-        master.addWidget(sub_channels_scroll)
-        master.addLayout(options_row)
-
-        self.setLayout(master)
+        return master
 
     def update_channel(self):
         channel_configs = {
@@ -231,11 +246,19 @@ class ChannelButton(QAbstractButton, BaseWidget):
 
     def initUI(self, channel, sub_channels):
         channel_layout = QVBoxLayout()
+        channel_layout.addLayout(self.get_header_ui(channel))
 
-        channel_header = QHBoxLayout()
+        self.sub_channels_layout = QVBoxLayout()
+        self.set_sub_channels(sub_channels)
+        channel_layout.addLayout(self.sub_channels_layout)
+
+        self.setLayout(channel_layout)
+
+    def get_header_ui(self, channel):
+        master = QHBoxLayout()
         channel_label = QLabel(channel)
         channel_label.setObjectName('subtitle')
-        channel_header.addWidget(channel_label)
+        master.addWidget(channel_label)
 
         delete_channel = QPushButton()
         delete_channel.clicked.connect(self.delete_channel)
@@ -244,15 +267,8 @@ class ChannelButton(QAbstractButton, BaseWidget):
         delete_channel.setIcon(QIcon(pixmap))
         delete_channel.setFixedHeight(32)
         delete_channel.setFixedWidth(32)
-        channel_header.addWidget(delete_channel)
-
-        channel_layout.addLayout(channel_header)
-
-        self.sub_channels_layout = QVBoxLayout()
-        self.set_sub_channels(sub_channels)
-        channel_layout.addLayout(self.sub_channels_layout)
-
-        self.setLayout(channel_layout)
+        master.addWidget(delete_channel)
+        return master
 
     def delete_channel(self):
         channel_data = {
@@ -306,6 +322,14 @@ class MyChannels(BaseWidget):
         title = QLabel('Channels')
         title.setFixedHeight(30)
         title.setObjectName('title')
+
+        master = QVBoxLayout()
+        master.addWidget(title)
+        master.addWidget(self.get_channels_area_ui())
+
+        self.setLayout(master)
+
+    def get_channels_area_ui(self):
         self.channels_layout = QVBoxLayout()
         container = QWidget()
         container.setLayout(self.channels_layout)
@@ -313,12 +337,7 @@ class MyChannels(BaseWidget):
         channels_scroll = QScrollArea()
         channels_scroll.setWidget(container)
         channels_scroll.setWidgetResizable(True)
-
-        master = QVBoxLayout()
-        master.addWidget(title)
-        master.addWidget(channels_scroll)
-
-        self.setLayout(master)
+        return channels_scroll
 
     def show(self) -> None:
         super().show()
