@@ -9,6 +9,7 @@ from PyQt6.QtWidgets import (
     QPushButton
 )
 from PyQt6.QtGui import QIntValidator, QPixmap, QIcon
+from PyQt6.QtCore import pyqtSlot, pyqtSignal
 from Widgets.base import BaseWidget, LabeledLineEdit
 from PIL.ImageQt import ImageQt
 from PIL import Image
@@ -126,6 +127,8 @@ class SubChannelConfig(QWidget):
 
 
 class ChannelUpdate(BaseWidget):
+    subChannelsDeleted = pyqtSignal(str, list)
+
     def __init__(self, channel, sub_channels, base_path, screen_size):
         super().__init__()
         self.base_path = base_path
@@ -208,6 +211,7 @@ class ChannelUpdate(BaseWidget):
                 if sub_channel_widget.delete_sub_channel.isChecked():
                     self.sub_channels_layout.removeWidget(sub_channel_widget)
                     sub_channel_widget.setParent(None)
+            self.subChannelsDeleted.emit(self.channel, request_data['sub_channels'])
 
 
 class ChannelButton(QAbstractButton, BaseWidget):
@@ -244,24 +248,11 @@ class ChannelButton(QAbstractButton, BaseWidget):
 
         channel_layout.addLayout(channel_header)
 
-        items_count = 0
-        sub_channels_layout = QHBoxLayout()
-        for sub_channel in sub_channels:
-            sub_channel_label = QLabel(sub_channel)
-            sub_channel_label.setObjectName('subtitle2')
-            sub_channels_layout.addWidget(sub_channel_label)
-            items_count += 1
-            if items_count == 3:
-                channel_layout.addLayout(sub_channels_layout)
-                sub_channels_layout = QHBoxLayout()
-                items_count = 0
-        if items_count > 0:
-            channel_layout.addLayout(sub_channels_layout)
+        self.sub_channels_layout = QVBoxLayout()
+        self.set_sub_channels(sub_channels)
+        channel_layout.addLayout(self.sub_channels_layout)
 
         self.setLayout(channel_layout)
-
-    def paintEvent(self, a0, QPaintEvent=None):
-        pass
 
     def delete_channel(self):
         channel_data = {
@@ -274,6 +265,25 @@ class ChannelButton(QAbstractButton, BaseWidget):
         response = requests.get(f'{HOST}:{PORT}/channel/delete/', headers=headers, json=channel_data)
         if response.status_code == 200:
             self.setParent(None)
+
+    def set_sub_channels(self, sub_channels):
+        self.clear_layout(self.sub_channels_layout)
+        items_count = 0
+        sub_channels_sub_layout = QHBoxLayout()
+        for sub_channel in sub_channels:
+            sub_channel_label = QLabel(sub_channel)
+            sub_channel_label.setObjectName('subtitle2')
+            sub_channels_sub_layout.addWidget(sub_channel_label)
+            items_count += 1
+            if items_count == 3:
+                self.sub_channels_layout.addLayout(sub_channels_sub_layout)
+                sub_channels_sub_layout = QHBoxLayout()
+                items_count = 0
+        if items_count > 0:
+            self.sub_channels_layout.addLayout(sub_channels_sub_layout)
+
+    def paintEvent(self, a0, QPaintEvent=None):
+        pass
 
 
 class MyChannels(BaseWidget):
@@ -334,12 +344,16 @@ class MyChannels(BaseWidget):
                                                    clicked_button.sub_channels,
                                                    self.base_path,
                                                    self.screen_size)
+        self.update_channel_window.subChannelsDeleted.connect(self.sub_channels_deleted)
         self.update_channel_window.show()
 
-    @staticmethod
-    def clear_layout(layout):
-        for i in reversed(range(layout.count())):
-            item = layout.itemAt(i)
-            widget = item.widget()
-            widget.setParent(None)
-            layout.removeWidget(widget)
+    @pyqtSlot(str, list)
+    def sub_channels_deleted(self, channel, sub_channels):
+        for i in reversed(range(self.channels_layout.count())):
+            channel_button = self.channels_layout.itemAt(i).widget()
+            if channel_button.channel == channel:
+                break
+        for sub_channel in sub_channels:
+            del channel_button.sub_channels[sub_channel]
+
+        channel_button.set_sub_channels(channel_button.sub_channels)

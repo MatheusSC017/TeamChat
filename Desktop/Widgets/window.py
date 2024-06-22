@@ -432,14 +432,6 @@ class Home(MainWindowUI):
             self.message.setEnabled(True)
             self.button_send_message.setEnabled(True)
 
-    @staticmethod
-    def clear_layout(layout):
-        for i in reversed(range(layout.count())):
-            item = layout.itemAt(i)
-            widget = item.widget()
-            widget.setParent(None)
-            layout.removeWidget(widget)
-
     def closeEvent(self, *args, **kwargs):
         super().closeEvent(*args, **kwargs)
         if self.connected:

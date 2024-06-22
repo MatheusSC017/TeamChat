@@ -38,6 +38,16 @@ class BaseWidget(QWidget):
         window_center_y = (screen_size.height() - height) // 2
         self.setGeometry(window_center_x + width_modifier, window_center_y + height_modifier, width, height)
 
+    def clear_layout(self, main_layout):
+        for i in reversed(range(main_layout.count())):
+            item = main_layout.itemAt(i)
+            widget = item.widget()
+            if widget is not None:
+                widget.setParent(None)
+                main_layout.removeWidget(widget)
+            else:
+                self.clear_layout(item.layout())
+
 
 class BaseFormWindow(BaseWidget):
     window_name = None
