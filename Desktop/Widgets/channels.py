@@ -198,7 +198,7 @@ class ChannelUpdate(BaseWidget):
             sub_channel, config = sub_channel_widget.get_sub_channel_data()
             channel_configs['sub_channels'][sub_channel] = config
 
-        token = keyring.get_password('system', 'token')
+        token = keyring.get_password('system', 'TeamChatToken')
         headers = {
             'Authorization': token
         }
@@ -209,7 +209,7 @@ class ChannelUpdate(BaseWidget):
             'channel': self.channel,
             'sub_channels': []
         }
-        token = keyring.get_password('system', 'token')
+        token = keyring.get_password('system', 'TeamChatToken')
         headers = {
             'Authorization': token
         }
@@ -274,7 +274,7 @@ class ChannelButton(QAbstractButton, BaseWidget):
         channel_data = {
             'channel': self.channel,
         }
-        token = keyring.get_password('system', 'token')
+        token = keyring.get_password('system', 'TeamChatToken')
         headers = {
             'Authorization': token
         }
@@ -344,7 +344,7 @@ class MyChannels(BaseWidget):
         self.set_channels()
 
     def set_channels(self):
-        token = keyring.get_password('system', 'token')
+        token = keyring.get_password('system', 'TeamChatToken')
         headers = {
             'Authorization': token
         }

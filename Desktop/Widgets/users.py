@@ -177,7 +177,7 @@ class AccountConfig(BaseWidget):
         self.setLayout(master)
 
     def update_account(self):
-        token = keyring.get_password('system', 'token')
+        token = keyring.get_password('system', 'TeamChatToken')
         headers = {
             'Authorization': token
         }
@@ -197,7 +197,7 @@ class AccountConfig(BaseWidget):
 
     def show(self) -> None:
         super().show()
-        token = keyring.get_password('system', 'token')
+        token = keyring.get_password('system', 'TeamChatToken')
         headers = {
             'Authorization': token
         }

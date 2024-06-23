@@ -20,6 +20,7 @@ from threading import Thread
 from datetime import datetime
 import time
 import asyncio
+import keyring
 from Widgets import buttons, chat, base, connect, users, channels
 
 
@@ -78,11 +79,13 @@ class MainWindowUI(QMainWindow, base.BaseWidget):
         self.register_menu = QAction("Register")
         self.login_menu = QAction("Login")
         self.account_menu = QAction("Account")
-        self.account_menu.setVisible(False)
         self.my_channels_menu = QAction("My channels")
-        self.my_channels_menu.setVisible(False)
         self.logout_menu = QAction("Logout")
-        self.logout_menu.setVisible(False)
+        token = keyring.get_password('system', 'TeamChatToken')
+        if token is not None:
+            self.logged_in_user_menu()
+        else:
+            self.logged_out_user_menu()
 
         user_menu.addAction(self.register_menu)
         user_menu.addAction(self.login_menu)
@@ -167,6 +170,20 @@ class MainWindowUI(QMainWindow, base.BaseWidget):
         column.addWidget(self.users_scroll)
         return column
 
+    def logged_in_user_menu(self):
+        self.register_menu.setVisible(False)
+        self.login_menu.setVisible(False)
+        self.account_menu.setVisible(True)
+        self.my_channels_menu.setVisible(True)
+        self.logout_menu.setVisible(True)
+
+    def logged_out_user_menu(self):
+        self.register_menu.setVisible(True)
+        self.login_menu.setVisible(True)
+        self.account_menu.setVisible(False)
+        self.my_channels_menu.setVisible(False)
+        self.logout_menu.setVisible(False)
+
 
 class Home(MainWindowUI):
     connected = False
@@ -198,7 +215,7 @@ class Home(MainWindowUI):
         self.login_menu.triggered.connect(self.open_login_ui)
         self.account_menu.triggered.connect(self.open_account_window)
         self.my_channels_menu.triggered.connect(self.open_my_channels_window)
-        self.logout_menu.triggered.connect(self.logged_out_user_menu)
+        self.logout_menu.triggered.connect(self.logout_user)
 
         # Sub window components
         self.connect_window.closeSign.connect(self.close_connect_window)
@@ -284,25 +301,15 @@ class Home(MainWindowUI):
     def open_login_ui(self):
         self.login_window.show()
 
-    def logged_in_user_menu(self):
-        self.register_menu.setVisible(False)
-        self.login_menu.setVisible(False)
-        self.account_menu.setVisible(True)
-        self.my_channels_menu.setVisible(True)
-        self.logout_menu.setVisible(True)
+    def logout_user(self):
+        keyring.delete_password('system', 'TeamChatToken')
+        self.logged_out_user_menu()
 
     def open_account_window(self):
         self.account_config_window.show()
 
     def open_my_channels_window(self):
         self.my_channels_window.show()
-
-    def logged_out_user_menu(self):
-        self.register_menu.setVisible(True)
-        self.login_menu.setVisible(True)
-        self.account_menu.setVisible(False)
-        self.my_channels_menu.setVisible(False)
-        self.logout_menu.setVisible(False)
 
     @pyqtSlot(list)
     def set_users_online(self, users_online):
