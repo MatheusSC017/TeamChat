@@ -11,6 +11,7 @@ from PyQt6.QtWidgets import (
 from PyQt6.QtGui import QIntValidator, QPixmap, QIcon
 from PyQt6.QtCore import pyqtSlot, pyqtSignal
 from Widgets.base import BaseWidget, LabeledLineEdit
+from Widgets.dialogs import WarningDialog
 from PIL.ImageQt import ImageQt
 from PIL import Image
 from dotenv import load_dotenv
@@ -302,8 +303,56 @@ class ChannelButton(QAbstractButton, BaseWidget):
         pass
 
 
+class NewChannel(BaseWidget):
+    channelRegistered = pyqtSignal(str)
+
+    def __init__(self, base_path, screen_size):
+        super().__init__()
+        self.base_path = base_path
+        self.screen_size = screen_size
+
+        self.settings(screen_size)
+        self.initUI()
+        self.setStyleCSS(base_path / "Static/CSS/channels.css")
+
+    def settings(self, screen_size):
+        self.setWindowTitle('New Channel')
+        self.set_geometry_center(250, 100, screen_size, fixed=True)
+
+    def initUI(self):
+        self.channel_name = QLineEdit()
+        register_channel = QPushButton('Register')
+        register_channel.clicked.connect(self.register_channel)
+
+        master = QVBoxLayout()
+        master.addWidget(QLabel('Name'))
+        master.addWidget(self.channel_name)
+        master.addWidget(register_channel)
+        self.setLayout(master)
+
+    def register_channel(self):
+        channel_data = {
+            'channel': self.channel_name.text(),
+        }
+        token = keyring.get_password('system', 'TeamChatToken')
+        headers = {
+            'Authorization': token
+        }
+        response = requests.post(f'{HOST}:{PORT}/channel/register/', headers=headers, json=channel_data)
+        if response.status_code == 201:
+            dlg = WarningDialog(self, f'{self.channel_name.text()} registered')
+            dlg.exec()
+            self.channelRegistered.emit(self.channel_name.text())
+            self.channel_name.setText('')
+            self.close()
+        else:
+            dlg = WarningDialog(self, f'{self.channel_name.text()} not registered')
+            dlg.exec()
+
+
 class MyChannels(BaseWidget):
     update_channel_window = None
+    new_channel_window = None
 
     def __init__(self, base_path, screen_size):
         super().__init__()
@@ -323,9 +372,13 @@ class MyChannels(BaseWidget):
         title.setFixedHeight(30)
         title.setObjectName('title')
 
+        new_channel = QPushButton('New Channel')
+        new_channel.clicked.connect(self.open_new_channel_window)
+
         master = QVBoxLayout()
         master.addWidget(title)
         master.addWidget(self.get_channels_area_ui())
+        master.addWidget(new_channel)
 
         self.setLayout(master)
 
@@ -356,6 +409,19 @@ class MyChannels(BaseWidget):
                 channel_button = ChannelButton(channel, sub_channels, self.base_path)
                 channel_button.clicked.connect(self.open_channel_config)
                 self.channels_layout.addWidget(channel_button)
+
+    def open_new_channel_window(self):
+        if self.new_channel_window is None:
+            self.new_channel_window = NewChannel(self.base_path, self.screen_size)
+            self.new_channel_window.channelRegistered.connect(self.update_channels_list)
+
+        self.new_channel_window.show()
+
+    @pyqtSlot(str)
+    def update_channels_list(self, channel):
+        channel_button = ChannelButton(channel, {}, self.base_path)
+        channel_button.clicked.connect(self.open_channel_config)
+        self.channels_layout.addWidget(channel_button)
 
     def open_channel_config(self):
         clicked_button = self.sender()

@@ -139,8 +139,7 @@ class LogIn(UserForm):
         response_content = super().send_request()
 
         if response_content.get('token'):
-            keyring.set_password('system', 'token', response_content['token'])
-
+            keyring.set_password('system', 'TeamChatToken', response_content['token'])
             self.logged_in_user.emit()
 
 

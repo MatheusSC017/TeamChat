@@ -7,6 +7,9 @@ class WarningDialog(QDialog):
 
         self.setWindowTitle("Warning")
 
+        self.setFixedHeight(100)
+        self.setFixedWidth(200)
+
         self.layout = QVBoxLayout()
         self.layout.addWidget(QLabel(message))
 
