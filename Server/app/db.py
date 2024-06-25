@@ -43,6 +43,7 @@ class ChatCollection(MongoDB):
 
         channel_document = {
             'Channel': channel,
+            'SubChannels': {},
             'owner': owner
         }
         return True, await self.collection.insert_one(channel_document)
@@ -53,6 +54,20 @@ class ChatCollection(MongoDB):
         if result:
             return True
         return False
+
+    async def register_sub_channel(self, channel, sub_channel, owner):
+        channel_data = await self.get_channel(channel, owner)
+        errors = []
+        if sub_channel in channel_data['SubChannels'].keys():
+            errors.append(f'The name "{sub_channel}" is already in use on this channel')
+
+        if len(errors) == 0:
+            channel_filter = {'Channel': channel, 'owner': owner}
+            channel_data['SubChannels'][sub_channel] = {}
+            await self.collection.update_one(channel_filter, {'$set': {'SubChannels': channel_data['SubChannels']}})
+            return True, []
+        else:
+            return False, errors
 
     async def update_sub_channels(self, channel, sub_channels, owner):
         channel_filter = {'Channel': channel, 'owner': owner}

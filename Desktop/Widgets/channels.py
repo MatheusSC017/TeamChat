@@ -135,14 +135,65 @@ class SubChannelConfig(QWidget):
         return self.sub_channel, sub_channel_config
 
 
+class NewSubChannel(BaseWidget):
+    subChannelRegistered = pyqtSignal(str)
+
+    def __init__(self, base_path, screen_size, channel):
+        super().__init__()
+        self.base_path = base_path
+        self.screen_size = screen_size
+
+        self.channel = channel
+        self.settings(screen_size)
+        self.initUI()
+        self.setStyleCSS(base_path / "Static/CSS/channels.css")
+
+    def settings(self, screen_size):
+        self.setWindowTitle('New Channel')
+        self.set_geometry_center(250, 100, screen_size, fixed=True)
+
+    def initUI(self):
+        self.sub_channel_name = QLineEdit()
+        register_sub_channel = QPushButton('Register')
+        register_sub_channel.clicked.connect(self.register_sub_channel)
+
+        master = QVBoxLayout()
+        master.addWidget(QLabel('Name'))
+        master.addWidget(self.sub_channel_name)
+        master.addWidget(register_sub_channel)
+        self.setLayout(master)
+
+    def register_sub_channel(self):
+        channel_data = {
+            'channel': self.channel,
+            'sub_channel': self.sub_channel_name.text(),
+        }
+        token = keyring.get_password('system', 'TeamChatToken')
+        headers = {
+            'Authorization': token
+        }
+        response = requests.post(f'{HOST}:{PORT}/channel/sub_channels/register/', headers=headers, json=channel_data)
+        if response.status_code == 201:
+            dlg = WarningDialog(self, f'{self.sub_channel_name.text()} registered')
+            dlg.exec()
+            self.subChannelRegistered.emit(self.sub_channel_name.text())
+            self.sub_channel_name.setText('')
+            self.close()
+        else:
+            dlg = WarningDialog(self, f'{self.sub_channel_name.text()} not registered')
+            dlg.exec()
+
+
 class ChannelUpdate(BaseWidget):
     subChannelsDeleted = pyqtSignal(str, list)
+    new_sub_channel_window = None
 
     def __init__(self, channel, sub_channels, base_path, screen_size):
         super().__init__()
         self.base_path = base_path
 
         self.channel = channel
+        self.screen_size = screen_size
         self.settings(screen_size)
         self.initUI(channel, sub_channels)
         self.setStyleCSS(base_path / "Static/CSS/channels.css")
@@ -179,8 +230,12 @@ class ChannelUpdate(BaseWidget):
     def get_options_menu_ui(self):
         master = QHBoxLayout()
 
+        insert_button = QPushButton('Insert')
+        insert_button.clicked.connect(self.open_new_sub_channel_window)
+        master.addWidget(insert_button)
+
         update_button = QPushButton('Update')
-        update_button.clicked.connect(self.update_channel)
+        update_button.clicked.connect(self.update_sub_channels)
         master.addWidget(update_button)
 
         delete_button = QPushButton('Delete')
@@ -189,7 +244,19 @@ class ChannelUpdate(BaseWidget):
 
         return master
 
-    def update_channel(self):
+    def open_new_sub_channel_window(self):
+        if self.new_sub_channel_window is None:
+            self.new_sub_channel_window = NewSubChannel(self.base_path, self.screen_size, self.channel)
+            self.new_sub_channel_window.subChannelRegistered.connect(self.update_sub_channels_list)
+
+        self.new_sub_channel_window.show()
+
+    @pyqtSlot(str)
+    def update_sub_channels_list(self, sub_channel):
+        sub_channel_widget = SubChannelConfig(sub_channel, {}, self.base_path)
+        self.sub_channels_layout.addWidget(sub_channel_widget)
+
+    def update_sub_channels(self):
         channel_configs = {
             'channel': self.channel,
             'sub_channels': {}
@@ -438,6 +505,7 @@ class MyChannels(BaseWidget):
             channel_button = self.channels_layout.itemAt(i).widget()
             if channel_button.channel == channel:
                 break
+
         for sub_channel in sub_channels:
             del channel_button.sub_channels[sub_channel]
 
