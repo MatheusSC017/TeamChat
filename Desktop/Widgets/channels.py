@@ -186,6 +186,7 @@ class NewSubChannel(BaseWidget):
 
 class ChannelUpdate(BaseWidget):
     subChannelsDeleted = pyqtSignal(str, list)
+    subChannelsInserted = pyqtSignal(str, str)
     new_sub_channel_window = None
 
     def __init__(self, channel, sub_channels, base_path, screen_size):
@@ -255,6 +256,7 @@ class ChannelUpdate(BaseWidget):
     def update_sub_channels_list(self, sub_channel):
         sub_channel_widget = SubChannelConfig(sub_channel, {}, self.base_path)
         self.sub_channels_layout.addWidget(sub_channel_widget)
+        self.subChannelsInserted.emit(self.channel, sub_channel)
 
     def update_sub_channels(self):
         channel_configs = {
@@ -497,6 +499,7 @@ class MyChannels(BaseWidget):
                                                    self.base_path,
                                                    self.screen_size)
         self.update_channel_window.subChannelsDeleted.connect(self.sub_channels_deleted)
+        self.update_channel_window.subChannelsInserted.connect(self.sub_channels_inserted)
         self.update_channel_window.show()
 
     @pyqtSlot(str, list)
@@ -504,9 +507,17 @@ class MyChannels(BaseWidget):
         for i in reversed(range(self.channels_layout.count())):
             channel_button = self.channels_layout.itemAt(i).widget()
             if channel_button.channel == channel:
+                for sub_channel in sub_channels:
+                    del channel_button.sub_channels[sub_channel]
+
+                channel_button.set_sub_channels(channel_button.sub_channels)
                 break
 
-        for sub_channel in sub_channels:
-            del channel_button.sub_channels[sub_channel]
+    @pyqtSlot(str, str)
+    def sub_channels_inserted(self, channel, sub_channel):
+        for i in reversed(range(self.channels_layout.count())):
+            channel_button = self.channels_layout.itemAt(i).widget()
+            if channel_button.channel == channel:
+                channel_button.sub_channels[sub_channel] = {}
 
-        channel_button.set_sub_channels(channel_button.sub_channels)
+                channel_button.set_sub_channels(channel_button.sub_channels)
