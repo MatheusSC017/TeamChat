@@ -119,14 +119,13 @@ async def update_channel(request):
         return web.Response(status=401)
 
     channel_data = await request.json()
-    updated, result = await request.app['chat_collection'].update_channel(channel_data['old_channel_name'],
-                                                                          channel_data['new_channel_name'],
-                                                                          username)
-
+    updated = await request.app['chat_collection'].update_channel(channel_data['old_channel_name'],
+                                                                  channel_data['new_channel_name'],
+                                                                  username)
     if updated:
-        return web.Response(status=201)
+        return web.Response(status=200)
 
-    return web.Response(body=json.dumps({'errors': result}), status=400)
+    return web.Response(status=400)
 
 
 async def delete_channel(request):

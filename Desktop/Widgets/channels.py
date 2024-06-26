@@ -322,13 +322,25 @@ class ChannelButton(QAbstractButton, BaseWidget):
         self.set_sub_channels(sub_channels)
         channel_layout.addLayout(self.sub_channels_layout)
 
+        channel_layout.addLayout(self.get_update_button_ui())
+
         self.setLayout(channel_layout)
 
     def get_header_ui(self, channel):
         master = QHBoxLayout()
-        channel_label = QLabel(channel)
-        channel_label.setObjectName('subtitle')
-        master.addWidget(channel_label)
+        self.channel_form = QLineEdit(channel)
+        self.channel_form.setEnabled(False)
+        self.channel_form.setObjectName('subtitle')
+        master.addWidget(self.channel_form)
+
+        self.update_channel_icon = QPushButton()
+        image = Image.open(self.base_path / "Static/Images/pencil.png")
+        self.update_channel_icon.clicked.connect(self.update_channel_form)
+        pixmap = QPixmap.fromImage(ImageQt(image))
+        self.update_channel_icon.setIcon(QIcon(pixmap))
+        self.update_channel_icon.setFixedHeight(32)
+        self.update_channel_icon.setFixedWidth(32)
+        master.addWidget(self.update_channel_icon)
 
         delete_channel = QPushButton()
         delete_channel.clicked.connect(self.delete_channel)
@@ -339,6 +351,44 @@ class ChannelButton(QAbstractButton, BaseWidget):
         delete_channel.setFixedWidth(32)
         master.addWidget(delete_channel)
         return master
+
+    def get_update_button_ui(self):
+        update_layout = QHBoxLayout()
+        update_layout.setContentsMargins(0, 25, 0, 0)
+        update_layout.addStretch()
+        self.update_button = QPushButton("Update")
+        self.update_button.clicked.connect(self.update_channel)
+        self.update_button.setVisible(False)
+        self.update_button.setFixedHeight(25)
+        self.update_button.setFixedWidth(200)
+        update_layout.addWidget(self.update_button)
+        return update_layout
+
+    def update_channel_form(self):
+        self.update_button.setVisible(True)
+        self.channel_form.setEnabled(True)
+        self.update_channel_icon.setEnabled(False)
+
+    def update_channel(self):
+        channel_data = {
+            'old_channel_name': self.channel,
+            'new_channel_name': self.channel_form.text(),
+        }
+        print(channel_data)
+        token = keyring.get_password('system', 'TeamChatToken')
+        headers = {
+            'Authorization': token
+        }
+        response = requests.put(f'{HOST}:{PORT}/channel/update/', headers=headers, json=channel_data)
+        if response.status_code == 200:
+            dlg = WarningDialog(self, f'{self.channel_form.text()} updated')
+            dlg.exec()
+            self.update_button.setVisible(False)
+            self.channel_form.setEnabled(False)
+            self.update_channel_icon.setEnabled(True)
+        else:
+            dlg = WarningDialog(self, f'{self.channel_form.text()} not updated')
+            dlg.exec()
 
     def delete_channel(self):
         channel_data = {
