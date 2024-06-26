@@ -43,6 +43,7 @@ def set_routes(app):
     app.router.add_post('/login/', views.log_in)
     app.router.add_post('/logout/', views.log_out)
     app.router.add_post('/channel/register/', views.register_channel)
+    app.router.add_put('/channel/update/', views.update_channel)
     app.router.add_get('/channel/retrieve/', views.retrieve_channels)
     app.router.add_get('/channel/delete/', views.delete_channel)
     app.router.add_post('/channel/sub_channels/register/', views.register_sub_channel)
@@ -53,7 +54,7 @@ def set_routes(app):
 async def shutdown(app):
     for channel in app['websockets'].keys():
         for sub_channel in app['websockets'][channel].keys():
-            for ws in app['websockets'][channel][sub_channel].values():
+            for ws in app['websockets'][channel][sub_channel]['Users'].values():
                 await ws.close()
     app['websockets'].clear()
 

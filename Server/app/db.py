@@ -37,7 +37,7 @@ class ChatCollection(MongoDB):
         self._collection_name = 'Chats'
 
     async def register_channel(self, channel, owner):
-        channel_data = await self.get_channel(channel, owner)
+        channel_data = await self.get_channel(channel)
         if channel_data is not None:
             return False, ["This channel name is already in use", ]
 
@@ -47,6 +47,20 @@ class ChatCollection(MongoDB):
             'owner': owner
         }
         return True, await self.collection.insert_one(channel_document)
+
+    async def update_channel(self, old_channel_name, new_channel_name, owner):
+        channel_data = await self.get_channel(new_channel_name)
+        if channel_data is not None:
+            return False, ["This channel name is already in use", ]
+
+        channel_filter = {
+            'Channel': old_channel_name,
+            'owner': owner
+        }
+        response = await self.collection.update_one(channel_filter, {'$set': {'Channel': new_channel_name}})
+        if response:
+            return True
+        return False
 
     async def delete_channel(self, channel, owner):
         channel_filter = {'Channel': channel, 'owner': owner}

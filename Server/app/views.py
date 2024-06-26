@@ -41,6 +41,18 @@ async def update_user(request):
     return web.Response(status=500)
 
 
+async def retrieve_user(request):
+    access_token = request.headers.get('Authorization', None)
+    if access_token is None:
+        return web.Response(status=400)
+    username, authenticated = request.app['tokens'].authenticate(base64.b64decode(access_token))
+    if authenticated:
+        user = await request.app['user_collection'].get_user(username)
+        del user['password']
+        return web.Response(body=json_util.dumps(user), status=200)
+    return web.Response(status=401)
+
+
 async def log_in(request):
     user_credentials = await request.post()
     if 'username' not in user_credentials.keys() or 'password' not in user_credentials.keys():
@@ -60,21 +72,9 @@ async def log_out(request):
     if access_token is None:
         return web.Response(status=400)
 
-    logged_out = request.app['tokens'].del_user(user_credentials['token'])
+    logged_out = request.app['tokens'].del_user(access_token)
     if logged_out:
         return web.Response(status=200)
-    return web.Response(status=401)
-
-
-async def retrieve_user(request):
-    access_token = request.headers.get('Authorization', None)
-    if access_token is None:
-        return web.Response(status=400)
-    username, authenticated = request.app['tokens'].authenticate(base64.b64decode(access_token))
-    if authenticated:
-        user = await request.app['user_collection'].get_user(username)
-        del user['password']
-        return web.Response(body=json_util.dumps(user), status=200)
     return web.Response(status=401)
 
 
@@ -111,7 +111,22 @@ async def register_channel(request):
 
 
 async def update_channel(request):
-    pass
+    access_token = request.headers.get('Authorization', None)
+    if access_token is None:
+        return web.Response(status=400)
+    username, authenticated = request.app['tokens'].authenticate(base64.b64decode(access_token))
+    if not authenticated:
+        return web.Response(status=401)
+
+    channel_data = await request.json()
+    updated, result = await request.app['chat_collection'].update_channel(channel_data['old_channel_name'],
+                                                                          channel_data['new_channel_name'],
+                                                                          username)
+
+    if updated:
+        return web.Response(status=201)
+
+    return web.Response(body=json.dumps({'errors': result}), status=400)
 
 
 async def delete_channel(request):
