@@ -72,7 +72,7 @@ async def log_out(request):
     if access_token is None:
         return web.Response(status=400)
 
-    logged_out = request.app['tokens'].del_user(access_token)
+    logged_out = request.app['tokens'].del_user(base64.b64decode(access_token))
     if logged_out:
         return web.Response(status=200)
     return web.Response(status=401)

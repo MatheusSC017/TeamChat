@@ -121,7 +121,7 @@ class UserForm(BaseWidget):
 class RegisterUser(UserForm):
     def __init__(self, *args, **kwargs):
         self.form_name = "Register"
-        self.url = f'{HOST}:{PORT}/user/register/'
+        self.url = f'{HOST}:{PORT}/user/'
         self.success_message = "User registered"
         self.fail_message = "User register error"
         super().__init__(*args, **kwargs)
@@ -185,7 +185,7 @@ class AccountConfig(BaseWidget):
             'nickname': self.nickname.text(),
             'email': self.email.text(),
         }
-        response = requests.put(f'{HOST}:{PORT}/user/update/', data=user_data, headers=headers)
+        response = requests.put(f'{HOST}:{PORT}/user/', data=user_data, headers=headers)
         if response.status_code == 202:
             self.hide()
             dlg = WarningDialog(self, "User updated")
@@ -200,7 +200,7 @@ class AccountConfig(BaseWidget):
         headers = {
             'Authorization': token
         }
-        response = requests.get(f'{HOST}:{PORT}/user/retrieve/', headers=headers)
+        response = requests.get(f'{HOST}:{PORT}/user/', headers=headers)
         if response.status_code == 200:
             data = response.json()
             self.username.setText(data.get('username', ''))

@@ -172,7 +172,7 @@ class NewSubChannel(BaseWidget):
         headers = {
             'Authorization': token
         }
-        response = requests.post(f'{HOST}:{PORT}/channel/sub_channels/register/', headers=headers, json=channel_data)
+        response = requests.post(f'{HOST}:{PORT}/channel/sub_channels/', headers=headers, json=channel_data)
         if response.status_code == 201:
             dlg = WarningDialog(self, f'{self.sub_channel_name.text()} registered')
             dlg.exec()
@@ -272,7 +272,7 @@ class ChannelUpdate(BaseWidget):
         headers = {
             'Authorization': token
         }
-        requests.put(f'{HOST}:{PORT}/channel/sub_channels/update/', headers=headers, json=channel_configs)
+        requests.put(f'{HOST}:{PORT}/channel/sub_channels/', headers=headers, json=channel_configs)
 
     def delete_sub_channels(self):
         request_data = {
@@ -288,7 +288,7 @@ class ChannelUpdate(BaseWidget):
             if sub_channel_widget.delete_sub_channel.isChecked():
                 request_data['sub_channels'].append(sub_channel_widget.sub_channel)
 
-        response = requests.get(f'{HOST}:{PORT}/channel/sub_channels/delete/', headers=headers, json=request_data)
+        response = requests.delete(f'{HOST}:{PORT}/channel/sub_channels/', headers=headers, json=request_data)
 
         if response.status_code == 200:
             for i in reversed(range(self.sub_channels_layout.count())):
@@ -379,7 +379,7 @@ class ChannelButton(QAbstractButton, BaseWidget):
         headers = {
             'Authorization': token
         }
-        response = requests.put(f'{HOST}:{PORT}/channel/update/', headers=headers, json=channel_data)
+        response = requests.put(f'{HOST}:{PORT}/channel/', headers=headers, json=channel_data)
         if response.status_code == 200:
             dlg = WarningDialog(self, f'{self.channel_form.text()} updated')
             dlg.exec()
@@ -398,7 +398,7 @@ class ChannelButton(QAbstractButton, BaseWidget):
         headers = {
             'Authorization': token
         }
-        response = requests.get(f'{HOST}:{PORT}/channel/delete/', headers=headers, json=channel_data)
+        response = requests.delete(f'{HOST}:{PORT}/channel/', headers=headers, json=channel_data)
         if response.status_code == 200:
             self.setParent(None)
 
@@ -457,7 +457,7 @@ class NewChannel(BaseWidget):
         headers = {
             'Authorization': token
         }
-        response = requests.post(f'{HOST}:{PORT}/channel/register/', headers=headers, json=channel_data)
+        response = requests.post(f'{HOST}:{PORT}/channel/', headers=headers, json=channel_data)
         if response.status_code == 201:
             dlg = WarningDialog(self, f'{self.channel_name.text()} registered')
             dlg.exec()
@@ -520,7 +520,7 @@ class MyChannels(BaseWidget):
         headers = {
             'Authorization': token
         }
-        response = requests.get(f'{HOST}:{PORT}/channel/retrieve/', headers=headers)
+        response = requests.get(f'{HOST}:{PORT}/channel/', headers=headers)
         if response.status_code == 200:
             self.clear_layout(self.channels_layout)
             self.channels = response.json()

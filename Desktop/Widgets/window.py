@@ -18,10 +18,18 @@ from PyQt6.QtCore import pyqtSlot
 from qasync import asyncSlot
 from threading import Thread
 from datetime import datetime
+from dotenv import load_dotenv
 import time
 import asyncio
 import keyring
+import requests
+import os
 from Widgets import buttons, chat, base, connect, users, channels
+
+load_dotenv()
+
+HOST = os.environ.get("HOST")
+PORT = os.environ.get("PORT")
 
 
 class MainWindowUI(QMainWindow, base.BaseWidget):
@@ -302,8 +310,14 @@ class Home(MainWindowUI):
         self.login_window.show()
 
     def logout_user(self):
-        keyring.delete_password('system', 'TeamChatToken')
-        self.logged_out_user_menu()
+        token = keyring.get_password('system', 'TeamChatToken')
+        headers = {
+            'Authorization': token
+        }
+        response = requests.post(f'{HOST}:{PORT}/logout/', headers=headers)
+        if response.status_code == 200:
+            keyring.delete_password('system', 'TeamChatToken')
+            self.logged_out_user_menu()
 
     def open_account_window(self):
         self.account_config_window.show()
