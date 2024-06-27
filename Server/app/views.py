@@ -294,10 +294,12 @@ async def disconnect(request, ws_current, username):
 async def get_structure(request, ws_current):
     structure = {}
     for channel in request.app['websockets'].keys():
-        structure[channel] = {sub_channel: list(request.app['websockets'][channel][sub_channel]['Users'].keys())
-                              for sub_channel in request.app['websockets'][channel].keys()}
-    await ws_current.send_json({'action': 'get_structure',
-                                'structure': structure})
+        structure[channel] = {}
+        for sub_channel in request.app['websockets'][channel].keys():
+            structure[channel][sub_channel] = {}
+            for config, values in request.app['websockets'][channel][sub_channel].items():
+                structure[channel][sub_channel]['Users'] = list(values.keys()) if config == 'Users' else values
+    await ws_current.send_json({'action': 'get_structure', 'structure': structure})
 
 
 async def get_user_list(request, ws_current, username):

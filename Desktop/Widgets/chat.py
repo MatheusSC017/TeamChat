@@ -125,7 +125,7 @@ class ChatHandler(QWidget, object):
     def connect_action(self, message_json):
         self.messageReceived.emit(f'{message_json["datetime"]} - {message_json["user"]} connected',
                                   'Global')
-        self.structure['Global']['Logs'].append(message_json['user'])
+        self.structure['Global']['Logs']['Users'].append(message_json['user'])
         if self.current_channel == 'Global':
             self.setSubChannels.emit(self.structure['Global'], False)
 
@@ -133,7 +133,7 @@ class ChatHandler(QWidget, object):
         self.messageReceived.emit(f'{message_json["datetime"]} - {message_json["user"]} disconnected',
                                   'Global')
         channel, sub_channel = self.get_user_position(message_json["user"])
-        self.structure[channel][sub_channel].remove(message_json['user'])
+        self.structure[channel][sub_channel]['Users'].remove(message_json['user'])
         if self.current_channel == channel:
             self.setSubChannels.emit(self.structure[channel], False)
 
@@ -181,21 +181,21 @@ class ChatHandler(QWidget, object):
 
     def update_username_structure(self, old_username, new_username):
         channel, sub_channel = self.get_user_position(old_username)
-        self.structure[channel][sub_channel].remove(old_username)
-        self.structure[channel][sub_channel].append(new_username)
+        self.structure[channel][sub_channel]['Users'].remove(old_username)
+        self.structure[channel][sub_channel]['Users'].append(new_username)
         if self.current_channel == channel:
             self.setSubChannels.emit(self.structure[channel], False)
 
     def update_structure(self, new_channel, new_sub_channel, user):
         channel, sub_channel = self.get_user_position(user)
-        self.structure[channel][sub_channel].remove(user)
+        self.structure[channel][sub_channel]['Users'].remove(user)
 
-        self.structure[new_channel][new_sub_channel].append(user)
+        self.structure[new_channel][new_sub_channel]['Users'].append(user)
         if self.current_channel in (channel, new_channel):
             self.setSubChannels.emit(self.structure[self.current_channel], False)
 
     def get_user_position(self, user):
         for channel in self.structure.keys():
             for sub_channel in self.structure[channel].keys():
-                if user in self.structure[channel][sub_channel]:
+                if user in self.structure[channel][sub_channel]['Users']:
                     return channel, sub_channel

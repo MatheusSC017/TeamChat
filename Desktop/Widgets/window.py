@@ -363,8 +363,8 @@ class Home(MainWindowUI):
         self.clear_layout(self.sub_channels_layout)
         self.sub_channels_layouts = {}
 
-        for sub_channel, users in sub_channels.items():
-            sub_channel_widget = buttons.PushButtonSubChannel(sub_channel, users, self.base_path)
+        for sub_channel, configs in sub_channels.items():
+            sub_channel_widget = buttons.PushButtonSubChannel(sub_channel, configs['Users'], self.base_path)
             sub_channel_widget.clicked.connect(self.join)
             self.sub_channels_layouts[(self.chat_handler.current_channel, sub_channel)] = sub_channel_widget
 
