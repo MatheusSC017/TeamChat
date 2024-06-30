@@ -4,6 +4,7 @@ from aiohttp import web
 import views
 from db import ChatCollection, UserCollection
 from tokens import UserToken
+from middlewares import is_authenticated
 
 channels = {
     "Global": {
@@ -13,7 +14,7 @@ channels = {
 
 
 async def init_app():
-    app = web.Application()
+    app = web.Application(middlewares=[is_authenticated, ])
 
     app['tokens'] = UserToken()
 

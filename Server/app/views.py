@@ -23,30 +23,21 @@ async def register_user(request):
 
 
 async def update_user(request):
-    access_token = request.headers.get('Authorization', None)
-    if access_token is None:
-        return web.Response(status=400)
-    username, authenticated = request.app['tokens'].authenticate(base64.b64decode(access_token))
-    if not authenticated:
+    if not request['is_authenticated']:
         return web.Response(status=401)
-
     user_data = await request.post()
-    updated, _ = await request.app['user_collection'].update_user(username, user_data)
+    updated, _ = await request.app['user_collection'].update_user(request['username'], user_data)
     if updated:
         return web.Response(status=202)
     return web.Response(status=500)
 
 
 async def retrieve_user(request):
-    access_token = request.headers.get('Authorization', None)
-    if access_token is None:
-        return web.Response(status=400)
-    username, authenticated = request.app['tokens'].authenticate(base64.b64decode(access_token))
-    if authenticated:
-        user = await request.app['user_collection'].get_user(username)
-        del user['password']
-        return web.Response(body=json_util.dumps(user), status=200)
-    return web.Response(status=401)
+    if not request['is_authenticated']:
+        return web.Response(status=401)
+    user = await request.app['user_collection'].get_user(request['username'])
+    del user['password']
+    return web.Response(body=json_util.dumps(user), status=200)
 
 
 async def log_in(request):
@@ -75,12 +66,10 @@ async def log_out(request):
 
 
 async def retrieve_channels(request):
-    access_token = request.headers.get('Authorization', None)
-    if access_token is None:
-        return web.Response(status=400)
-    username, authenticated = request.app['tokens'].authenticate(base64.b64decode(access_token))
-    if authenticated:
-        channels = await request.app['chat_collection'].get_channels(owner=username)
+    if not request['is_authenticated']:
+        return web.Response(status=401)
+    if request['is_authenticated']:
+        channels = await request.app['chat_collection'].get_channels(owner=request['username'])
         for channel in channels.keys():
             for sub_channel in channels[channel].keys():
                 if 'password' in channels[channel][sub_channel].keys():
@@ -90,15 +79,11 @@ async def retrieve_channels(request):
 
 
 async def register_channel(request):
-    access_token = request.headers.get('Authorization', None)
-    if access_token is None:
-        return web.Response(status=400)
-    username, authenticated = request.app['tokens'].authenticate(base64.b64decode(access_token))
-    if not authenticated:
+    if not request['is_authenticated']:
         return web.Response(status=401)
 
     channel_data = await request.json()
-    inserted, result = await request.app['chat_collection'].register_channel(channel_data['channel'], username)
+    inserted, result = await request.app['chat_collection'].register_channel(channel_data['channel'], request['username'])
 
     if inserted:
         return web.Response(status=201)
@@ -107,17 +92,13 @@ async def register_channel(request):
 
 
 async def update_channel(request):
-    access_token = request.headers.get('Authorization', None)
-    if access_token is None:
-        return web.Response(status=400)
-    username, authenticated = request.app['tokens'].authenticate(base64.b64decode(access_token))
-    if not authenticated:
+    if not request['is_authenticated']:
         return web.Response(status=401)
 
     channel_data = await request.json()
     updated = await request.app['chat_collection'].update_channel(channel_data['old_channel_name'],
                                                                   channel_data['new_channel_name'],
-                                                                  username)
+                                                                  request['username'])
     if updated:
         return web.Response(status=200)
 
@@ -125,67 +106,51 @@ async def update_channel(request):
 
 
 async def delete_channel(request):
-    access_token = request.headers.get('Authorization', None)
-    if access_token is None:
-        return web.Response(status=400)
-    username, authenticated = request.app['tokens'].authenticate(base64.b64decode(access_token))
-    if not authenticated:
+    if not request['is_authenticated']:
         return web.Response(status=401)
 
     channel = await request.json()
     deleted = await request.app['chat_collection'].delete_channel(channel['channel'],
-                                                                  username)
+                                                                  request['username'])
     if deleted:
         return web.Response(status=200)
     return web.Response(status=500)
 
 
 async def register_sub_channel(request):
-    access_token = request.headers.get('Authorization', None)
-    if access_token is None:
-        return web.Response(status=400)
-    username, authenticated = request.app['tokens'].authenticate(base64.b64decode(access_token))
-    if not authenticated:
+    if not request['is_authenticated']:
         return web.Response(status=401)
 
     channel_data = await request.json()
     inserted, result = await request.app['chat_collection'].register_sub_channel(channel_data['channel'],
                                                                                  channel_data['sub_channel'],
-                                                                                 username)
+                                                                                 request['username'])
     if inserted:
         return web.Response(status=201)
     return web.Response(body=json.dumps({'errors': result}), status=400)
 
 
 async def update_sub_channels(request):
-    access_token = request.headers.get('Authorization', None)
-    if access_token is None:
-        return web.Response(status=400)
-    username, authenticated = request.app['tokens'].authenticate(base64.b64decode(access_token))
-    if not authenticated:
+    if not request['is_authenticated']:
         return web.Response(status=401)
 
     channel_data = await request.json()
     updated = await request.app['chat_collection'].update_sub_channels(channel_data['channel'],
                                                                        channel_data['sub_channels'],
-                                                                       username)
+                                                                       request['username'])
     if updated:
         return web.Response(status=202)
     return web.Response(status=500)
 
 
 async def delete_sub_channels(request):
-    access_token = request.headers.get('Authorization', None)
-    if access_token is None:
-        return web.Response(status=400)
-    username, authenticated = request.app['tokens'].authenticate(base64.b64decode(access_token))
-    if not authenticated:
+    if not request['is_authenticated']:
         return web.Response(status=401)
 
     channel = await request.json()
     deleted = await request.app['chat_collection'].delete_sub_channels(channel['channel'],
                                                                        channel['sub_channels'],
-                                                                       username)
+                                                                       request['username'])
     if deleted:
         return web.Response(status=200)
     return web.Response(status=400)

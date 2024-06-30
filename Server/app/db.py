@@ -72,7 +72,7 @@ class ChatCollection(MongoDB):
     async def register_sub_channel(self, channel, sub_channel, owner):
         channel_data = await self.get_channel(channel, owner)
         errors = []
-        if sub_channel in channel_data['SubChannels'].keys():
+        if channel_data['SubChannels'] is not None and sub_channel in channel_data['SubChannels'].keys():
             errors.append(f'The name "{sub_channel}" is already in use on this channel')
 
         if len(errors) == 0:
