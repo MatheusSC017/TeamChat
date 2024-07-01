@@ -198,6 +198,8 @@ class Home(MainWindowUI):
     chat_handler = None
     chat_thread = None
 
+    current_channel_ui = 'Global'
+
     direct_chats = {}
     log_chat = None
     sub_channel_chat = None
@@ -348,18 +350,12 @@ class Home(MainWindowUI):
     @pyqtSlot()
     def get_sub_channels(self):
         clicked_button = self.sender()
-        if clicked_button is not None and self.chat_handler.current_channel != clicked_button.channel_name:
-            self.chat_handler.current_channel = clicked_button.channel_name
-            self.sub_channels_groupbox.setTitle(self.chat_handler.current_channel)
-            self.enable_send_message()
+        self.current_channel_ui = clicked_button.channel_name
+        self.sub_channels_groupbox.setTitle(self.current_channel_ui)
+        self.chat_handler.get_sub_channels(channel=clicked_button.channel_name)
 
-            self.chat_handler.current_sub_channel = list(self.chat_handler.structure[self.chat_handler.current_channel].keys())[0]
-            asyncio.create_task(self.chat_handler.join(self.chat_handler.current_channel,
-                                                       self.chat_handler.current_sub_channel))
-            self.chat_handler.get_sub_channels(channel=self.chat_handler.current_channel)
-
-    @asyncSlot(dict, bool)
-    async def set_sub_channels(self, sub_channels, set_chat):
+    @asyncSlot(dict)
+    async def set_sub_channels(self, sub_channels):
         self.clear_layout(self.sub_channels_layout)
         self.sub_channels_layouts = {}
 
@@ -370,21 +366,17 @@ class Home(MainWindowUI):
 
             self.sub_channels_layout.addWidget(sub_channel_widget)
 
-        if set_chat:
-            self.set_sub_channel_chat()
-
     @pyqtSlot()
     def join(self):
         clicked_button = self.sender()
-        if self.chat_handler.current_sub_channel != clicked_button.sub_channel_name:
+        if (self.chat_handler.current_channel != self.current_channel_ui or
+            self.chat_handler.current_sub_channel != clicked_button.sub_channel_name):
+            self.chat_handler.current_channel = self.current_channel_ui
             self.chat_handler.current_sub_channel = clicked_button.sub_channel_name
             asyncio.create_task(self.chat_handler.join(self.chat_handler.current_channel,
                                                        self.chat_handler.current_sub_channel))
 
             self.set_sub_channel_chat()
-            self.sub_channel_chat.setPlainText(f"You have joined {self.chat_handler.current_channel} / "
-                                               f"{self.chat_handler.current_sub_channel}")
-
             self.enable_send_message()
 
     def set_sub_channel_chat(self):
@@ -392,7 +384,7 @@ class Home(MainWindowUI):
             self.tabs.removeTab(1)
             self.sub_channel_chat = None
 
-        if self.chat_handler.current_sub_channel != 'Logs':
+        if self.chat_handler.current_channel != 'Global':
             self.sub_channel_chat = self.create_chat_widget()
 
             self.tabs.insertTab(1, self.sub_channel_chat, self.chat_handler.current_sub_channel)
@@ -400,8 +392,8 @@ class Home(MainWindowUI):
             self.sub_channel_chat.setPlainText(f"You have joined {self.chat_handler.current_channel} / "
                                                f"{self.chat_handler.current_sub_channel}")
         else:
-            self.log_chat.setPlainText(f"You have joined {self.chat_handler.current_channel} / "
-                                       f"{self.chat_handler.current_sub_channel}")
+            self.log_chat.append(f"You have joined {self.chat_handler.current_channel} / "
+                                 f"{self.chat_handler.current_sub_channel}")
 
     @asyncSlot()
     async def send_message(self):
