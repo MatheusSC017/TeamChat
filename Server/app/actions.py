@@ -45,7 +45,7 @@ async def get_structure(request, ws_current):
         for sub_channel in request.app['websockets'][channel].keys():
             structure[channel][sub_channel] = {}
             for config, values in request.app['websockets'][channel][sub_channel].items():
-                structure[channel][sub_channel]['Users'] = list(values.keys()) if config == 'Users' else values
+                structure[channel][sub_channel][config] = list(values.keys()) if config == 'Users' else values
     await ws_current.send_json({'action': 'get_structure', 'structure': structure})
 
 
