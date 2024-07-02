@@ -5,10 +5,7 @@ from PyQt6.QtWidgets import (
     QHBoxLayout,
     QVBoxLayout
 )
-from PyQt6.QtGui import QPixmap
-from PIL.ImageQt import ImageQt
-from PIL import Image
-from Widgets.base import BaseWidget
+from Widgets.base import BaseWidget, IconWidget
 
 
 class PushButtonChannel(QAbstractButton, BaseWidget):
@@ -51,18 +48,15 @@ class PushButtonSubChannel(QAbstractButton, BaseWidget):
         sub_channel_header.addWidget(QLabel(name))
 
         if configs.get('enable_password'):
-            padlock_icon = base_path / "Static/Images/padlock.png"
-
-            image = Image.open(padlock_icon)
-            image = image.resize((15, 15))
-            image_qt = ImageQt(image)
-
-            sub_channel_protected = QLabel("")
-            sub_channel_protected.setPixmap(QPixmap.fromImage(image_qt))
-            sub_channel_protected.setFixedHeight(30)
-            sub_channel_protected.setFixedWidth(30)
-
-            sub_channel_header.addWidget(sub_channel_protected)
+            sub_channel_header.addWidget(IconWidget('padlock', base_path))
+        if configs.get('only_logged_in_users'):
+            sub_channel_header.addWidget(IconWidget('only_logged_in', base_path))
+        if configs.get('limit_users'):
+            sub_channel_header.addWidget(IconWidget('limit_users', base_path))
+            limit_of_users = configs.get('number_of_users', 2)
+            number_of_users = QLabel(f' {limit_of_users} ')
+            number_of_users.setMaximumWidth(25)
+            sub_channel_header.addWidget(number_of_users)
 
         user_list = QWidget()
         user_list.setLayout(self.user_layout)

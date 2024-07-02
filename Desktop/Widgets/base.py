@@ -5,6 +5,9 @@ from PyQt6.QtWidgets import (
     QPushButton,
     QVBoxLayout,
 )
+from PyQt6.QtGui import QPixmap
+from PIL.ImageQt import ImageQt
+from PIL import Image
 
 
 class LabeledLineEdit(QWidget):
@@ -75,3 +78,20 @@ class BaseFormWindow(BaseWidget):
         master.addWidget(self.form_button)
 
         self.setLayout(master)
+
+
+class IconWidget(QLabel):
+    def __init__(self, name, base_path):
+        super().__init__()
+        self.initUI(name, base_path)
+
+    def initUI(self, name, base_path):
+        padlock_icon = base_path / f"Static/Images/{name}.png"
+
+        image = Image.open(padlock_icon)
+        image = image.resize((15, 15))
+        image_qt = ImageQt(image)
+
+        self.setPixmap(QPixmap.fromImage(image_qt))
+        self.setFixedHeight(30)
+        self.setFixedWidth(30)
