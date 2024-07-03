@@ -135,12 +135,12 @@ async def update_sub_channels(request):
         return web.Response(status=401)
 
     channel_data = await request.json()
-    updated = await request.app['chat_collection'].update_sub_channels(channel_data['channel'],
-                                                                       channel_data['sub_channels'],
-                                                                       request['username'])
+    updated, result = await request.app['chat_collection'].update_sub_channels(channel_data['channel'],
+                                                                               channel_data['sub_channels'],
+                                                                               request['username'])
     if updated:
         return web.Response(status=202)
-    return web.Response(status=500)
+    return web.Response(status=500, body=json.dumps({'errors': result}))
 
 
 async def delete_sub_channels(request):

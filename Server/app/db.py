@@ -85,10 +85,24 @@ class ChatCollection(MongoDB):
 
     async def update_sub_channels(self, channel, sub_channels, owner):
         channel_filter = {'Channel': channel, 'owner': owner}
-        result = await self.collection.update_one(channel_filter, {'$set': {'SubChannels': sub_channels}})
-        if result:
-            return True
-        return False
+
+        errors = []
+        for sub_channel in sub_channels:
+            if sub_channels[sub_channel].get('enable_password', False):
+                if validate_password(sub_channels[sub_channel].get('password', '')):
+                    sub_channels[sub_channel]['password'] = self.hash_password(sub_channels[sub_channel]['password'])
+                else:
+                    errors.append("Invalid password")
+            if sub_channels[sub_channel].get('limit_users', False):
+                if sub_channels[sub_channel].get('number_of_users', 0) < 2:
+                    errors.append("The number of users must be greater than or equal to 2")
+
+        if len(errors) == 0:
+            result = await self.collection.update_one(channel_filter, {'$set': {'SubChannels': sub_channels}})
+            if result:
+                return True, result
+            return False, result
+        return False, errors
 
     async def delete_sub_channels(self, channel, sub_channels, owner):
         channel_data = await self.get_channel(channel, owner)
@@ -122,6 +136,19 @@ class ChatCollection(MongoDB):
         if owner is not None:
             channel_filter['owner'] = owner
         return await self.collection.find_one(channel_filter)
+
+    @staticmethod
+    def hash_password(password, salt=None):
+        if salt is None:
+            salt = os.urandom(16)
+        interations = int(1e5)
+        password_hash = hashlib.pbkdf2_hmac(
+            'sha256',
+            password.encode('utf-8'),
+            salt,
+            interations
+        )
+        return salt + password_hash
 
 
 class UserCollection(MongoDB):

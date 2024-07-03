@@ -184,7 +184,7 @@ class NewSubChannel(BaseWidget):
             dlg.exec()
 
 
-class ChannelUpdate(BaseWidget):
+class SubChannelUpdate(BaseWidget):
     subChannelsDeleted = pyqtSignal(str, list)
     subChannelsInserted = pyqtSignal(str, str)
     new_sub_channel_window = None
@@ -544,10 +544,10 @@ class MyChannels(BaseWidget):
 
     def open_channel_config(self):
         clicked_button = self.sender()
-        self.update_channel_window = ChannelUpdate(clicked_button.channel,
-                                                   clicked_button.sub_channels,
-                                                   self.base_path,
-                                                   self.screen_size)
+        self.update_channel_window = SubChannelUpdate(clicked_button.channel,
+                                                      clicked_button.sub_channels,
+                                                      self.base_path,
+                                                      self.screen_size)
         self.update_channel_window.subChannelsDeleted.connect(self.sub_channels_deleted)
         self.update_channel_window.subChannelsInserted.connect(self.sub_channels_inserted)
         self.update_channel_window.show()
