@@ -1,9 +1,7 @@
 from motor import motor_asyncio
-import hashlib
-import os
 import inspect
 
-from validations import validate_password, validate_email, validate_nickname
+from validations import hash_password, validate_password, validate_email, validate_nickname
 from settings import MONGODB_URI
 
 
@@ -90,7 +88,7 @@ class ChatCollection(MongoDB):
         for sub_channel in sub_channels:
             if sub_channels[sub_channel].get('enable_password', False):
                 if validate_password(sub_channels[sub_channel].get('password', '')):
-                    sub_channels[sub_channel]['password'] = self.hash_password(sub_channels[sub_channel]['password'])
+                    sub_channels[sub_channel]['password'] = hash_password(sub_channels[sub_channel]['password'])
                 else:
                     errors.append("Invalid password")
             if sub_channels[sub_channel].get('limit_users', False):
@@ -137,19 +135,6 @@ class ChatCollection(MongoDB):
             channel_filter['owner'] = owner
         return await self.collection.find_one(channel_filter)
 
-    @staticmethod
-    def hash_password(password, salt=None):
-        if salt is None:
-            salt = os.urandom(16)
-        interations = int(1e5)
-        password_hash = hashlib.pbkdf2_hmac(
-            'sha256',
-            password.encode('utf-8'),
-            salt,
-            interations
-        )
-        return salt + password_hash
-
 
 class UserCollection(MongoDB):
     def __init__(self, *args, **kwargs):
@@ -162,7 +147,7 @@ class UserCollection(MongoDB):
         if len(errors) == 0:
             user_document = {
                 'username': username,
-                'password': self.hash_password(password)
+                'password': hash_password(password)
             }
             return True, await self.collection.insert_one(user_document)
         return False, errors
@@ -191,19 +176,6 @@ class UserCollection(MongoDB):
     async def get_users(self):
         users = await self.collection.find().to_list(length=None)
         return users
-
-    @staticmethod
-    def hash_password(password, salt=None):
-        if salt is None:
-            salt = os.urandom(16)
-        interations = int(1e5)
-        password_hash = hashlib.pbkdf2_hmac(
-            'sha256',
-            password.encode('utf-8'),
-            salt,
-            interations
-        )
-        return salt + password_hash
 
     async def validate_fields(self, user=None, **kwargs):
         validations = {
