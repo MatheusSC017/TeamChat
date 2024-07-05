@@ -202,7 +202,7 @@ async def index(request):
                         await get_user_list(request, ws_current, username)
 
                     elif action == 'join':
-                        await join(request, ws_current, username, message_json.get('channel'), message_json.get('sub_channel'))
+                        await join(request, ws_current, username, **message_json)
 
                     elif action == 'update_username':
                         new_username = await update_username(request, ws_current, username, message_json.get('username'))

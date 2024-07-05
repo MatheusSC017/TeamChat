@@ -1,6 +1,7 @@
 from datetime import datetime
 import logging
 from utils import local_broadcast, global_broadcast
+from validations import hash_password
 
 log = logging.getLogger(__name__)
 
@@ -56,14 +57,28 @@ async def get_user_list(request, ws_current, username):
                                 'user_list': user_list})
 
 
-async def join(request, ws_current, username, channel, sub_channel):
+async def join(request, ws_current, username, channel, sub_channel, **kwargs):
     if request.app['user_list'][username] != (channel, sub_channel) and \
        channel in request.app['websockets'].keys() and \
        sub_channel in request.app['websockets'][channel].keys():
+
+        configs = {key: value for key, value in request.app['websockets'][channel][sub_channel].items()
+                   if key != 'Users'}
+
+        if configs.get('enable_password'):
+            salt = configs.get('password')[0:16]
+            if configs.get('password') != hash_password(kwargs.get('password'), salt):
+                await ws_current.send_json({'action': 'join_refused', 'error': 'connection refused: incorrect password'})
+                return
+        if configs.get('limit_users'):
+            if len(request.app['websockets'][channel][sub_channel]['Users']) >= configs.get('number_of_users'):
+                await ws_current.send_json({'action': 'join_refused', 'error': 'connection refused: limit of users'})
+                return
+        if configs.get('only_logged_in_users'):
+            pass
+
         old_channel, old_sub_channel = request.app['user_list'][username]
-
         del request.app['websockets'][old_channel][old_sub_channel]['Users'][username]
-
         request.app['websockets'][channel][sub_channel]['Users'][username] = ws_current
         request.app['user_list'][username] = (channel, sub_channel)
 

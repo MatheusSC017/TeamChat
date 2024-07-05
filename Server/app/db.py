@@ -168,7 +168,7 @@ class UserCollection(MongoDB):
         if not user:
             return False
         salt = user['password'][0:16]
-        return user['password'] == self.hash_password(password, salt)
+        return user['password'] == hash_password(password, salt)
 
     async def get_user(self, username):
         return await self.collection.find_one({'username': username})
