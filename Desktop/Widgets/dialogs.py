@@ -1,4 +1,4 @@
-from PyQt6.QtWidgets import QDialog, QDialogButtonBox, QVBoxLayout, QLabel
+from PyQt6.QtWidgets import QDialog, QVBoxLayout, QLabel
 
 
 class WarningDialog(QDialog):
@@ -8,7 +8,7 @@ class WarningDialog(QDialog):
         self.setWindowTitle("Warning")
 
         self.setFixedHeight(100)
-        self.setFixedWidth(200)
+        self.setMinimumWidth(200)
 
         self.layout = QVBoxLayout()
         self.layout.addWidget(QLabel(message))

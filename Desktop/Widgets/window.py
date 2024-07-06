@@ -241,6 +241,7 @@ class Home(MainWindowUI):
         self.chat_handler.setChannels.connect(self.set_channels)
         self.chat_handler.setSubChannels.connect(self.set_sub_channels)
         self.chat_handler.usersOnline.connect(self.set_users_online)
+        self.chat_handler.joinAccepted.connect(self.join_ui)
 
         # Login
         self.login_window.logged_in_user.connect(self.logged_in_user_menu)
@@ -371,13 +372,15 @@ class Home(MainWindowUI):
         clicked_button = self.sender()
         if (self.chat_handler.current_channel != self.current_channel_ui or
             self.chat_handler.current_sub_channel != clicked_button.sub_channel_name):
-            self.chat_handler.current_channel = self.current_channel_ui
-            self.chat_handler.current_sub_channel = clicked_button.sub_channel_name
-            asyncio.create_task(self.chat_handler.join(self.chat_handler.current_channel,
-                                                       self.chat_handler.current_sub_channel))
+            asyncio.create_task(self.chat_handler.join(self.current_channel_ui, clicked_button.sub_channel_name))
 
-            self.set_sub_channel_chat()
-            self.enable_send_message()
+    @pyqtSlot(str, str)
+    def join_ui(self, channel, sub_channel):
+        self.chat_handler.current_channel = channel
+        self.chat_handler.current_sub_channel = sub_channel
+
+        self.set_sub_channel_chat()
+        self.enable_send_message()
 
     def set_sub_channel_chat(self):
         if self.sub_channel_chat is not None:

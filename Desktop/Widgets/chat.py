@@ -1,5 +1,3 @@
-import time
-
 from PyQt6.QtWidgets import QWidget
 from PyQt6.QtCore import pyqtSignal
 from aiohttp import ClientSession
@@ -10,6 +8,8 @@ from datetime import datetime
 import json
 import asyncio
 import os
+
+from Widgets.dialogs import WarningDialog
 
 load_dotenv()
 
@@ -23,6 +23,7 @@ class ChatHandler(QWidget, object):
     messageReceived = pyqtSignal(str, str)
     setChannels = pyqtSignal(list)
     setSubChannels = pyqtSignal(dict)
+    joinAccepted = pyqtSignal(str, str)
     websocket = None
     user = None
     current_channel = 'Global'
@@ -76,7 +77,6 @@ class ChatHandler(QWidget, object):
 
     async def join(self, channel: str, sub_channel: str):
         await self.websocket.send_json({'action': 'join', 'channel': channel, 'sub_channel': sub_channel})
-        self.update_structure(channel, sub_channel, self.user)
 
     async def update_username(self, username: str) -> None:
         await self.websocket.send_json({'action': 'update_username', 'username': username})
@@ -97,6 +97,8 @@ class ChatHandler(QWidget, object):
             'connect': self.connect_action,
             'disconnect': self.disconnect_action,
             'join': self.join_action,
+            'join_accepted': self.join_accepted_action,
+            'join_refused': self.join_refused_action,
             'update_username': self.update_username_action,
             'updated_username': self.updated_username_action,
             'invalid_username': self.invalid_username_action,
@@ -148,6 +150,14 @@ class ChatHandler(QWidget, object):
                                       'Local')
         self.update_structure(message_json["channel"], message_json["sub_channel"], message_json["user"])
 
+    def join_accepted_action(self, message_json):
+        self.update_structure(message_json['channel'], message_json['sub_channel'], self.user)
+        self.joinAccepted.emit(message_json['channel'], message_json['sub_channel'])
+
+    def join_refused_action(self, message_json):
+        dlg = WarningDialog(self, message_json['error'])
+        dlg.exec()
+
     def update_username_action(self, message_json):
         self.messageReceived.emit(f'{message_json["old_username"]} updated your name to '
                                   f'{message_json["new_username"]}',
@@ -192,7 +202,7 @@ class ChatHandler(QWidget, object):
 
         self.structure[new_channel][new_sub_channel]['Users'].append(user)
         if self.current_channel in (channel, new_channel):
-            self.setSubChannels.emit(self.structure[self.current_channel])
+            self.setSubChannels.emit(self.structure[new_channel])
 
     def get_user_position(self, user):
         for channel in self.structure.keys():

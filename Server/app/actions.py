@@ -46,7 +46,8 @@ async def get_structure(request, ws_current):
         for sub_channel in request.app['websockets'][channel].keys():
             structure[channel][sub_channel] = {}
             for config, values in request.app['websockets'][channel][sub_channel].items():
-                structure[channel][sub_channel][config] = list(values.keys()) if config == 'Users' else values
+                if config != 'password':
+                    structure[channel][sub_channel][config] = list(values.keys()) if config == 'Users' else values
     await ws_current.send_json({'action': 'get_structure', 'structure': structure})
 
 
@@ -67,7 +68,7 @@ async def join(request, ws_current, username, channel, sub_channel, **kwargs):
 
         if configs.get('enable_password'):
             salt = configs.get('password')[0:16]
-            if configs.get('password') != hash_password(kwargs.get('password'), salt):
+            if kwargs.get('password') is None or configs.get('password') != hash_password(kwargs.get('password'), salt):
                 await ws_current.send_json({'action': 'join_refused', 'error': 'connection refused: incorrect password'})
                 return
         if configs.get('limit_users'):
@@ -83,6 +84,8 @@ async def join(request, ws_current, username, channel, sub_channel, **kwargs):
         request.app['user_list'][username] = (channel, sub_channel)
 
         log.info('%s joined the %s / %s ', username, channel, sub_channel)
+        await ws_current.send_json({'action': 'join_accepted', 'channel': channel, 'sub_channel': sub_channel})
+
         content = {
             'action': 'join',
             'user': username,
