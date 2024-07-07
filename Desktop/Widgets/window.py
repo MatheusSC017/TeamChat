@@ -11,7 +11,8 @@ from PyQt6.QtWidgets import (
     QHBoxLayout,
     QVBoxLayout,
     QGroupBox,
-    QTabWidget
+    QTabWidget,
+    QInputDialog,
 )
 from PyQt6.QtGui import QAction
 from PyQt6.QtCore import pyqtSlot
@@ -370,9 +371,18 @@ class Home(MainWindowUI):
     @pyqtSlot()
     def join(self):
         clicked_button = self.sender()
-        if (self.chat_handler.current_channel != self.current_channel_ui or
-            self.chat_handler.current_sub_channel != clicked_button.sub_channel_name):
-            asyncio.create_task(self.chat_handler.join(self.current_channel_ui, clicked_button.sub_channel_name))
+        new_channel = self.current_channel_ui
+        new_sub_channel = clicked_button.sub_channel_name
+        if self.chat_handler.current_channel != new_channel or self.chat_handler.current_sub_channel != new_sub_channel:
+            if self.chat_handler.structure[new_channel][new_sub_channel].get('enable_password', False):
+                password_input_dialog = QInputDialog(self)
+                password_input_dialog.setWindowTitle("Password")
+                password_input_dialog.setLabelText("Enter the password:")
+                password_input_dialog.setTextEchoMode(QLineEdit.EchoMode.Password)
+                if password_input_dialog.exec():
+                    asyncio.create_task(self.chat_handler.join(new_channel, new_sub_channel, password_input_dialog.textValue()))
+                return
+            asyncio.create_task(self.chat_handler.join(new_channel, new_sub_channel))
 
     @pyqtSlot(str, str)
     def join_ui(self, channel, sub_channel):

@@ -75,8 +75,8 @@ class ChatHandler(QWidget, object):
     def get_sub_channels(self, channel: str) -> None:
         self.setSubChannels.emit(self.structure[channel])
 
-    async def join(self, channel: str, sub_channel: str):
-        await self.websocket.send_json({'action': 'join', 'channel': channel, 'sub_channel': sub_channel})
+    async def join(self, channel: str, sub_channel: str, password: str=None):
+        await self.websocket.send_json({'action': 'join', 'channel': channel, 'sub_channel': sub_channel, 'password': password})
 
     async def update_username(self, username: str) -> None:
         await self.websocket.send_json({'action': 'update_username', 'username': username})
