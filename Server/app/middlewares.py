@@ -1,6 +1,5 @@
 from aiohttp import web
 import base64
-import functools
 
 
 @web.middleware

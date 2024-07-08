@@ -380,8 +380,12 @@ class Home(MainWindowUI):
                 password_input_dialog.setLabelText("Enter the password:")
                 password_input_dialog.setTextEchoMode(QLineEdit.EchoMode.Password)
                 if password_input_dialog.exec():
-                    asyncio.create_task(self.chat_handler.join(new_channel, new_sub_channel, password_input_dialog.textValue()))
+                    asyncio.create_task(self.chat_handler.join(new_channel, new_sub_channel, password=password_input_dialog.textValue()))
                 return
+            if self.chat_handler.structure[new_channel][new_sub_channel].get('only_logged_in_users', False):
+                token = keyring.get_password('system', 'TeamChatToken')
+                asyncio.create_task(self.chat_handler.join(new_channel, new_sub_channel, Authorization=token))
+                return 
             asyncio.create_task(self.chat_handler.join(new_channel, new_sub_channel))
 
     @pyqtSlot(str, str)

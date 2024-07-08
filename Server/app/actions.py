@@ -1,5 +1,6 @@
 from datetime import datetime
 import logging
+import base64
 from utils import local_broadcast, global_broadcast
 from validations import hash_password
 
@@ -69,14 +70,18 @@ async def join(request, ws_current, username, channel, sub_channel, **kwargs):
         if configs.get('enable_password'):
             salt = configs.get('password')[0:16]
             if kwargs.get('password') is None or configs.get('password') != hash_password(kwargs.get('password'), salt):
-                await ws_current.send_json({'action': 'join_refused', 'error': 'connection refused: incorrect password'})
+                await ws_current.send_json({'action': 'join_refused', 'error': 'Connection refused: incorrect password'})
                 return
         if configs.get('limit_users'):
             if len(request.app['websockets'][channel][sub_channel]['Users']) >= configs.get('number_of_users'):
-                await ws_current.send_json({'action': 'join_refused', 'error': 'connection refused: limit of users'})
+                await ws_current.send_json({'action': 'join_refused', 'error': 'Connection refused: limit of users'})
                 return
         if configs.get('only_logged_in_users'):
-            pass
+            access_token = kwargs.get('Authorization')
+            if access_token is None or not request.app['tokens'].authenticate(base64.b64decode(access_token))[1]:
+                await ws_current.send_json({'action': 'join_refused',
+                                            'error': 'Connection refused: Only logged in users are allowed'})
+                return
 
         old_channel, old_sub_channel = request.app['user_list'][username]
         del request.app['websockets'][old_channel][old_sub_channel]['Users'][username]
