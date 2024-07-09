@@ -60,29 +60,32 @@ async def get_user_list(request, ws_current, username):
 
 
 async def join(request, ws_current, username, channel, sub_channel, **kwargs):
-    if request.app['user_list'][username] != (channel, sub_channel) and \
-       channel in request.app['websockets'].keys() and \
-       sub_channel in request.app['websockets'][channel].keys():
-
-        configs = {key: value for key, value in request.app['websockets'][channel][sub_channel].items()
-                   if key != 'Users'}
-
+    async def check_password():
         if configs.get('enable_password'):
             salt = configs.get('password')[0:16]
             if kwargs.get('password') is None or configs.get('password') != hash_password(kwargs.get('password'), salt):
-                await ws_current.send_json({'action': 'join_refused', 'error': 'Connection refused: incorrect password'})
-                return
-        if configs.get('limit_users'):
-            if len(request.app['websockets'][channel][sub_channel]['Users']) >= configs.get('number_of_users'):
+                await ws_current.send_json(
+                    {'action': 'join_refused', 'error': 'Connection refused: incorrect password'})
+                return False
+        return True
+
+    async def check_limit_of_users():
+        if (configs.get('limit_users') and
+           len(request.app['websockets'][channel][sub_channel]['Users']) >= configs.get('number_of_users')):
                 await ws_current.send_json({'action': 'join_refused', 'error': 'Connection refused: limit of users'})
-                return
+                return False
+        return True
+
+    async def check_only_logged_in_users():
         if configs.get('only_logged_in_users'):
             access_token = kwargs.get('Authorization')
             if access_token is None or not request.app['tokens'].authenticate(base64.b64decode(access_token))[1]:
                 await ws_current.send_json({'action': 'join_refused',
                                             'error': 'Connection refused: Only logged in users are allowed'})
-                return
+                return False
+        return True
 
+    async def update_structure():
         old_channel, old_sub_channel = request.app['user_list'][username]
         del request.app['websockets'][old_channel][old_sub_channel]['Users'][username]
         request.app['websockets'][channel][sub_channel]['Users'][username] = ws_current
@@ -101,6 +104,16 @@ async def join(request, ws_current, username, channel, sub_channel, **kwargs):
             'datetime': datetime.now().strftime('%d/%m/%Y %H:%M:%S')
         }
         await global_broadcast(request, ws_current, content)
+
+    if request.app['user_list'][username] != (channel, sub_channel) and \
+       channel in request.app['websockets'].keys() and \
+       sub_channel in request.app['websockets'][channel].keys():
+
+        configs = {key: value for key, value in request.app['websockets'][channel][sub_channel].items()
+                   if key != 'Users'}
+
+        if await check_password() and await check_limit_of_users() and await check_only_logged_in_users():
+            await update_structure()
 
 
 async def update_username(request, ws_current, old_username, new_username):
