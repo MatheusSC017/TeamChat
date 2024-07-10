@@ -15,7 +15,7 @@ from PyQt6.QtWidgets import (
     QInputDialog,
 )
 from PyQt6.QtGui import QAction
-from PyQt6.QtCore import pyqtSlot
+from PyQt6.QtCore import pyqtSignal, pyqtSlot
 from qasync import asyncSlot
 from threading import Thread
 from datetime import datetime
@@ -195,6 +195,7 @@ class MainWindowUI(QMainWindow, base.BaseWidget):
 
 
 class Home(MainWindowUI):
+    connectRequest = pyqtSignal(str)
     connected = False
     chat_handler = None
     chat_thread = None
@@ -218,6 +219,9 @@ class Home(MainWindowUI):
         self.chat_thread = Thread(target=asyncio.run, args=(self.chat_handler.handler(),))
 
     def create_widgets_connections(self):
+        # Signals
+        self.connectRequest.connect(self.start_chat)
+
         # Menu components
         self.connect_menu.triggered.connect(self.start_end_connection)
         self.username_menu.triggered.connect(self.update_username_ui)
@@ -251,8 +255,18 @@ class Home(MainWindowUI):
         self.create_connect_window() if not self.connected else self.end_chat()
 
     def create_connect_window(self):
-        self.connect_window.show()
-        self.setEnabled(False)
+        token = keyring.get_password('system', 'TeamChatToken')
+        if token:
+            headers = {
+                'Authorization': token
+            }
+            response = requests.get(f'{HOST}:{PORT}/user/', headers=headers)
+            if response.status_code == 200:
+                data = response.json()
+                self.connectRequest.emit(data.get('nickname', ''))
+        else:
+            self.connect_window.show()
+            self.setEnabled(False)
 
     @asyncSlot(str)
     async def start_chat(self, username):
