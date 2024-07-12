@@ -163,6 +163,17 @@ class UserCollection(MongoDB):
             return True, await self.collection.update_one(user_filter, {'$set': new_values})
         return False, errors
 
+    async def update_password(self, username, password):
+        user_data = await self.get_user(username)
+        errors = await self.validate_fields(user=user_data, password=password)
+
+        if len(errors) == 0:
+            user_filter = {
+                'username': username,
+            }
+            return True, await self.collection.update_one(user_filter, {'$set': {'password': hash_password(password)}})
+        return False, errors
+
     async def authenticate(self, username, password):
         user = await self.get_user(username)
         if not user:

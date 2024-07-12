@@ -39,6 +39,14 @@ async def retrieve_user(request):
     del user['password']
     return web.Response(body=json_util.dumps(user), status=200)
 
+async def update_password(request):
+    if not request['is_authenticated']:
+        return web.Response(status=401)
+    user_data = await request.post()
+    updated, _ = await request.app['user_collection'].update_password(request['username'], user_data['password'])
+    if updated:
+        return web.Response(status=202)
+    return web.Response(status=500)
 
 async def log_in(request):
     user_credentials = await request.post()

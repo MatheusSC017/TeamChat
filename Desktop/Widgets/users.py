@@ -12,7 +12,7 @@ import os
 import keyring
 
 from Widgets.base import BaseWidget, BaseFormWindow
-from Widgets.dialogs import WarningDialog
+from Widgets.dialogs import WarningDialog, UpdatePasswordDialog
 
 load_dotenv()
 
@@ -162,6 +162,7 @@ class AccountConfig(BaseWidget):
         self.update_account_button = QPushButton('Update account')
         self.update_account_button.clicked.connect(self.update_account)
         self.update_password_button = QPushButton('Update password')
+        self.update_password_button.clicked.connect(self.update_password)
 
         master = QVBoxLayout()
         master.addWidget(QLabel("Username"))
@@ -193,6 +194,17 @@ class AccountConfig(BaseWidget):
             dlg = WarningDialog(self, "Fail")
 
         dlg.exec()
+
+    def update_password(self):
+        update_password_dialog = UpdatePasswordDialog()
+        if update_password_dialog.exec():
+            new_password, confirm_password = update_password_dialog.getInputs()
+            if new_password == confirm_password:
+                token = keyring.get_password('system', 'TeamChatToken')
+                headers = {
+                    'Authorization': token
+                }
+                requests.post(f'{HOST}:{PORT}/user/update_password', headers=headers, data={'password': new_password})
 
     def show(self) -> None:
         super().show()

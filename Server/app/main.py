@@ -41,6 +41,7 @@ def set_routes(app):
     app.router.add_post('/user/', views.register_user)
     app.router.add_put('/user/', views.update_user)
     app.router.add_get('/user/', views.retrieve_user)
+    app.router.add_post('/user/update_password', views.update_password)
     app.router.add_post('/login/', views.log_in)
     app.router.add_post('/logout/', views.log_out)
     app.router.add_post('/channel/', views.register_channel)
