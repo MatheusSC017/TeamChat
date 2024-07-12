@@ -14,8 +14,7 @@ async def register_user(request):
     if 'username' not in user_credentials.keys() or 'password' not in user_credentials.keys():
         return web.Response(status=400)
 
-    inserted, result = await request.app['user_collection'].add_user(user_credentials['username'],
-                                                                     user_credentials['password'])
+    inserted, result = await request.app['user_collection'].add_user(**user_credentials)
     if inserted:
         return web.Response(status=201)
 

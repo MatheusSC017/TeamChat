@@ -79,7 +79,7 @@ class UserForm(BaseWidget):
 
     def settings(self, screen_size):
         self.setWindowTitle(self.form_name)
-        self.set_geometry_center(400, 150, screen_size, fixed=True)
+        self.set_geometry_center(400, 200, screen_size, fixed=True)
 
     def initUI(self):
         self.username = QLineEdit()
@@ -90,11 +90,15 @@ class UserForm(BaseWidget):
         self.send_form = QPushButton(self.form_name)
         self.send_form.clicked.connect(self.send_request)
 
+        self.form_layout = QVBoxLayout()
+        self.form_layout.setContentsMargins(5, 5, 5, 20)
+        self.form_layout.addWidget(QLabel("Username"))
+        self.form_layout.addWidget(self.username)
+        self.form_layout.addWidget(QLabel("Password"))
+        self.form_layout.addWidget(self.password)
+
         master = QVBoxLayout()
-        master.addWidget(QLabel("Username"))
-        master.addWidget(self.username)
-        master.addWidget(QLabel("Password"))
-        master.addWidget(self.password)
+        master.addLayout(self.form_layout)
         master.addWidget(self.send_form)
 
         self.setLayout(master)
@@ -124,7 +128,46 @@ class RegisterUser(UserForm):
         self.url = f'{HOST}:{PORT}/user/'
         self.success_message = "User registered"
         self.fail_message = "User register error"
+
         super().__init__(*args, **kwargs)
+
+        self.initRegisterUI()
+
+    def settings(self, screen_size):
+        self.setWindowTitle(self.form_name)
+        self.set_geometry_center(400, 300, screen_size, fixed=True)
+
+    def initRegisterUI(self):
+        self.nickname = QLineEdit()
+        self.email = QLineEdit()
+
+        self.form_layout.addWidget(QLabel("Nickname"))
+        self.form_layout.addWidget(self.nickname)
+        self.form_layout.addWidget(QLabel("E-mail"))
+        self.form_layout.addWidget(self.email)
+
+    def send_request(self):
+        user_data = {
+            'username': self.username.text(),
+            'password': self.password.text(),
+            'nickname': self.nickname.text(),
+            'email': self.email.text(),
+        }
+        response = requests.post(self.url, data=user_data)
+        if response.status_code in [200, 201]:
+            self.username.clear()
+            self.password.clear()
+            self.nickname.clear()
+            self.email.clear()
+            self.hide()
+            dlg = WarningDialog(self, self.success_message)
+        else:
+            dlg = WarningDialog(self, self.fail_message, response.json().get('errors') or [] if response.content else [])
+
+        dlg.exec()
+
+        return response.json() if response.content else {}
+
 
 
 class LogIn(UserForm):

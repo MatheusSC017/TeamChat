@@ -141,14 +141,12 @@ class UserCollection(MongoDB):
         super().__init__(*args, **kwargs)
         self._collection_name = 'Users'
 
-    async def add_user(self, username, password):
-        errors = await self.validate_fields(username=username, password=password)
+    async def add_user(self, **kwargs):
+        user_document = {key: value for key, value in kwargs.items() if key in ('username', 'password', 'nickname', 'email')}
+        errors = await self.validate_fields(**user_document)
 
         if len(errors) == 0:
-            user_document = {
-                'username': username,
-                'password': hash_password(password)
-            }
+            user_document['password'] = hash_password(user_document['password'])
             return True, await self.collection.insert_one(user_document)
         return False, errors
 
