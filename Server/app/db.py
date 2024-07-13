@@ -142,8 +142,10 @@ class UserCollection(MongoDB):
         self._collection_name = 'Users'
 
     async def add_user(self, **kwargs):
+        required_fields = ('username', 'password')
         user_document = {key: value for key, value in kwargs.items() if key in ('username', 'password', 'nickname', 'email')}
         errors = await self.validate_fields(**user_document)
+        errors.extend(self.check_required_fields(user_document, required_fields))
 
         if len(errors) == 0:
             user_document['password'] = hash_password(user_document['password'])
@@ -186,35 +188,45 @@ class UserCollection(MongoDB):
         users = await self.collection.find().to_list(length=None)
         return users
 
+    def check_required_fields(self, fields, required_fields):
+        errors = []
+        for field in required_fields:
+            if field not in fields.keys():
+                errors.append(f'The field {field} is required')
+        return errors
+
     async def validate_fields(self, user=None, **kwargs):
         validations = {
-            'username': [self.validate_username, "Username already in use"],
-            'password': [validate_password, "The password must contain 8 characters or more, consisting of at least one"
-                                            " uppercase letter, one lowercase letter, a number and a special character"],
-            'email': [validate_email, "Enter a valid email in the format email@provider.com"],
-            'nickname': [validate_nickname, "The nickname must contain at least 4 characters"],
+            'username': [(self.validate_username_in_user, "Username already in use"),
+                         (self.validate_username_length, "Username must contain 4 characters or more")],
+            'password': [(validate_password, "The password must contain 8 characters or more, consisting of at least one"
+                                             " uppercase letter, one lowercase letter, a number and a special character"), ],
+            'email': [(validate_email, "Enter a valid email in the format email@provider.com"), ],
+            'nickname': [(validate_nickname, "The nickname must contain at least 4 characters"), ],
         }
         errors = []
         for field, value in kwargs.items():
             if field not in validations.keys():
                 errors.append(f"{field} is not a valid field")
 
-            validation, error_message = validations[field]
+            for validation, error_message in validations[field]:
+                if inspect.iscoroutinefunction(validation):
+                    valid_field = await validation(value, user_data=user or {})
+                else:
+                    valid_field = validation(value, user_data=user or {})
 
-            if inspect.iscoroutinefunction(validation):
-                valid_field = await validation(value, user_data=user or {})
-            else:
-                valid_field = validation(value, user_data=user or {})
-
-            if not valid_field:
-                errors.append(error_message)
+                if not valid_field:
+                    errors.append(error_message)
 
         return errors
 
-    async def validate_username(self, username, user_data={}):
+    async def validate_username_in_user(self, username, user_data={}):
         users = await self.get_users()
         users = [user['username'] for user in users]
         return user_data.get('username') == username or username not in users
+
+    def validate_username_length(self, username, **kwargs):
+        return len(username) >= 4
 
 
 if __name__ == '__main__':
