@@ -144,8 +144,8 @@ class UserCollection(MongoDB):
     async def add_user(self, **kwargs):
         required_fields = ('username', 'password')
         user_document = {key: value for key, value in kwargs.items() if key in ('username', 'password', 'nickname', 'email')}
-        errors = await self.validate_fields(**user_document)
-        errors.extend(self.check_required_fields(user_document, required_fields))
+        errors = (self.check_required_fields(user_document, required_fields))
+        errors.extend(await self.validate_fields(required_fields=required_fields, **user_document))
 
         if len(errors) == 0:
             user_document['password'] = hash_password(user_document['password'])
@@ -191,11 +191,14 @@ class UserCollection(MongoDB):
     def check_required_fields(self, fields, required_fields):
         errors = []
         for field in required_fields:
-            if field not in fields.keys():
+            if (field not in fields.keys() or
+                    fields[field] is None or
+                    (type(fields[field]) is str and len(fields[field].strip()) == 0)):
                 errors.append(f'The field {field} is required')
+
         return errors
 
-    async def validate_fields(self, user=None, **kwargs):
+    async def validate_fields(self, user=None, required_fields=[], **kwargs):
         validations = {
             'username': [(self.validate_username_in_user, "Username already in use"),
                          (self.validate_username_length, "Username must contain 4 characters or more")],
@@ -208,6 +211,10 @@ class UserCollection(MongoDB):
         for field, value in kwargs.items():
             if field not in validations.keys():
                 errors.append(f"{field} is not a valid field")
+                continue
+
+            if field not in required_fields and (value is None or (type(value) is str and len(value) == 0)):
+                continue
 
             for validation, error_message in validations[field]:
                 if inspect.iscoroutinefunction(validation):
