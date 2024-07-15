@@ -169,21 +169,60 @@ class RegisterUser(UserForm):
         return response.json() if response.content else {}
 
 
-
-class LogIn(UserForm):
+class LogIn(BaseWidget):
     logged_in_user = pyqtSignal()
 
-    def __init__(self, *args, **kwargs):
-        self.form_name = "Log In"
-        self.url = f'{HOST}:{PORT}/login/'
-        super().__init__(*args, **kwargs)
+    def __init__(self, base_path, screen_size):
+        super().__init__()
+        self.settings(screen_size)
+        self.initUI()
+        self.setStyleCSS(base_path / "Static/CSS/users.css")
+
+    def settings(self, screen_size):
+        self.setWindowTitle('Log In')
+        self.set_geometry_center(400, 200, screen_size, fixed=True)
+
+    def initUI(self):
+        self.username = QLineEdit()
+        self.username.returnPressed.connect(self.send_request)
+        self.password = QLineEdit()
+        self.password.setEchoMode(QLineEdit.EchoMode.Password)
+        self.password.returnPressed.connect(self.send_request)
+        self.login = QPushButton('Log In')
+        self.login.clicked.connect(self.send_request)
+
+        self.form_layout = QVBoxLayout()
+        self.form_layout.setContentsMargins(5, 5, 5, 20)
+        self.form_layout.addWidget(QLabel("Username"))
+        self.form_layout.addWidget(self.username)
+        self.form_layout.addWidget(QLabel("Password"))
+        self.form_layout.addWidget(self.password)
+
+        master = QVBoxLayout()
+        master.addLayout(self.form_layout)
+        master.addWidget(self.login)
+
+        self.setLayout(master)
 
     def send_request(self):
-        response_content = super().send_request()
+        user_data = {
+            'username': self.username.text(),
+            'password': self.password.text(),
+        }
+        response = requests.post(f'{HOST}:{PORT}/login/', data=user_data)
+        if response.status_code in [200, 201]:
+            if response.content:
+                keyring.set_password('system', 'TeamChatToken', response.json().get('token'))
+                self.logged_in_user.emit()
 
-        if response_content.get('token'):
-            keyring.set_password('system', 'TeamChatToken', response_content['token'])
-            self.logged_in_user.emit()
+            self.username.clear()
+            self.password.clear()
+            self.hide()
+            dlg = WarningDialog(self, "User logged in")
+        else:
+            dlg = WarningDialog(self, "Check username and password and try again")
+
+        dlg.exec()
 
 
 class AccountConfig(BaseWidget):
