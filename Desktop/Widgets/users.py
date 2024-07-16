@@ -64,12 +64,7 @@ class UsersOnline(BaseWidget):
         self.setLayout(master)
 
 
-class UserForm(BaseWidget):
-    form_name = ""
-    url = ""
-    success_message = "Success"
-    fail_message = "Fail"
-
+class RegisterUser(BaseWidget):
     def __init__(self, base_path, screen_size):
         super().__init__()
 
@@ -78,91 +73,50 @@ class UserForm(BaseWidget):
         self.setStyleCSS(base_path / "Static/CSS/users.css")
 
     def settings(self, screen_size):
-        self.setWindowTitle(self.form_name)
-        self.set_geometry_center(400, 200, screen_size, fixed=True)
+        self.setWindowTitle("Register")
+        self.set_geometry_center(400, 300, screen_size, fixed=True)
 
     def initUI(self):
         self.username = QLineEdit()
-        self.username.returnPressed.connect(self.send_request)
+        self.username.returnPressed.connect(self.register_user)
         self.password = QLineEdit()
         self.password.setEchoMode(QLineEdit.EchoMode.Password)
-        self.password.returnPressed.connect(self.send_request)
-        self.send_form = QPushButton(self.form_name)
-        self.send_form.clicked.connect(self.send_request)
-
-        self.form_layout = QVBoxLayout()
-        self.form_layout.setContentsMargins(5, 5, 5, 20)
-        self.form_layout.addWidget(QLabel("Username"))
-        self.form_layout.addWidget(self.username)
-        self.form_layout.addWidget(QLabel("Password"))
-        self.form_layout.addWidget(self.password)
+        self.password.returnPressed.connect(self.register_user)
+        self.nickname = QLineEdit()
+        self.email = QLineEdit()
+        self.register = QPushButton("Register")
+        self.register.clicked.connect(self.register_user)
 
         master = QVBoxLayout()
-        master.addLayout(self.form_layout)
-        master.addWidget(self.send_form)
+        master.addWidget(QLabel("Username"))
+        master.addWidget(self.username)
+        master.addWidget(QLabel("Password"))
+        master.addWidget(self.password)
+        master.addWidget(QLabel("Nickname"))
+        master.addWidget(self.nickname)
+        master.addWidget(QLabel("E-mail"))
+        master.addWidget(self.email)
+        master.addWidget(self.register)
 
         self.setLayout(master)
 
-    def send_request(self):
-        user_data = {
-            'username': self.username.text(),
-            'password': self.password.text(),
-        }
-        response = requests.post(self.url, data=user_data)
-        if response.status_code in [200, 201]:
-            self.username.clear()
-            self.password.clear()
-            self.hide()
-            dlg = WarningDialog(self, self.success_message)
-        else:
-            dlg = WarningDialog(self, self.fail_message, response.json().get('errors') or [] if response.content else [])
-
-        dlg.exec()
-
-        return response.json() if response.content else {}
-
-
-class RegisterUser(UserForm):
-    def __init__(self, *args, **kwargs):
-        self.form_name = "Register"
-        self.url = f'{HOST}:{PORT}/user/'
-        self.success_message = "User registered"
-        self.fail_message = "User register error"
-
-        super().__init__(*args, **kwargs)
-
-        self.initRegisterUI()
-
-    def settings(self, screen_size):
-        self.setWindowTitle(self.form_name)
-        self.set_geometry_center(400, 300, screen_size, fixed=True)
-
-    def initRegisterUI(self):
-        self.nickname = QLineEdit()
-        self.email = QLineEdit()
-
-        self.form_layout.addWidget(QLabel("Nickname"))
-        self.form_layout.addWidget(self.nickname)
-        self.form_layout.addWidget(QLabel("E-mail"))
-        self.form_layout.addWidget(self.email)
-
-    def send_request(self):
+    def register_user(self):
         user_data = {
             'username': self.username.text(),
             'password': self.password.text(),
             'nickname': self.nickname.text(),
             'email': self.email.text(),
         }
-        response = requests.post(self.url, data=user_data)
-        if response.status_code in [200, 201]:
+        response = requests.post(f'{HOST}:{PORT}/user/', data=user_data)
+        if response.status_code == 201:
             self.username.clear()
             self.password.clear()
             self.nickname.clear()
             self.email.clear()
             self.hide()
-            dlg = WarningDialog(self, self.success_message)
+            dlg = WarningDialog(self, "User registered")
         else:
-            dlg = WarningDialog(self, self.fail_message, response.json().get('errors') or [] if response.content else [])
+            dlg = WarningDialog(self, "User register error", response.json().get('errors') or [] if response.content else [])
 
         dlg.exec()
 
@@ -210,7 +164,7 @@ class LogIn(BaseWidget):
             'password': self.password.text(),
         }
         response = requests.post(f'{HOST}:{PORT}/login/', data=user_data)
-        if response.status_code in [200, 201]:
+        if response.status_code == 200:
             if response.content:
                 keyring.set_password('system', 'TeamChatToken', response.json().get('token'))
                 self.logged_in_user.emit()
