@@ -102,29 +102,6 @@ class MainWindowUI(QMainWindow, base.BaseWidget):
         user_menu.addAction(self.my_channels_menu)
         user_menu.addAction(self.logout_menu)
 
-    def get_messages_ui(self):
-        self.log_chat = self.create_chat_widget()
-
-        self.tabs = QTabWidget()
-        self.tabs.addTab(self.log_chat, 'Logs')
-
-        self.message = QLineEdit()
-        self.message.setFixedHeight(40)
-        self.message.setEnabled(False)
-
-        self.button_send_message = QPushButton("Send")
-        self.button_send_message.setFixedHeight(40)
-        self.button_send_message.setEnabled(False)
-
-        message_group = QHBoxLayout()
-        message_group.addWidget(self.message)
-        message_group.addWidget(self.button_send_message)
-
-        column = QVBoxLayout()
-        column.addWidget(self.tabs)
-        column.addLayout(message_group)
-        return column
-
     def get_channels_ui(self):
         # Header
         title = QLabel("TeamChat")
@@ -179,6 +156,29 @@ class MainWindowUI(QMainWindow, base.BaseWidget):
         column.addWidget(self.users_scroll)
         return column
 
+    def get_messages_ui(self):
+        self.log_chat = self.create_chat_widget()
+
+        self.tabs = QTabWidget()
+        self.tabs.addTab(self.log_chat, 'Logs')
+
+        self.message = QLineEdit()
+        self.message.setFixedHeight(40)
+        self.message.setEnabled(False)
+
+        self.button_send_message = QPushButton("Send")
+        self.button_send_message.setFixedHeight(40)
+        self.button_send_message.setEnabled(False)
+
+        message_group = QHBoxLayout()
+        message_group.addWidget(self.message)
+        message_group.addWidget(self.button_send_message)
+
+        column = QVBoxLayout()
+        column.addWidget(self.tabs)
+        column.addLayout(message_group)
+        return column
+
     def logged_in_user_menu(self):
         self.register_menu.setVisible(False)
         self.login_menu.setVisible(False)
@@ -211,12 +211,7 @@ class Home(MainWindowUI):
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
 
-        self.create_chat()
         self.create_widgets_connections()
-
-    def create_chat(self):
-        self.chat_handler = chat.ChatHandler()
-        self.chat_thread = Thread(target=asyncio.run, args=(self.chat_handler.handler(),))
 
     def create_widgets_connections(self):
         # Signals
@@ -241,13 +236,6 @@ class Home(MainWindowUI):
         self.message.returnPressed.connect(self.send_message)
         self.button_send_message.clicked.connect(self.send_message)
 
-        # Chat handler
-        self.chat_handler.messageReceived.connect(self.on_message_received)
-        self.chat_handler.setChannels.connect(self.set_channels)
-        self.chat_handler.setSubChannels.connect(self.set_sub_channels)
-        self.chat_handler.usersOnline.connect(self.set_users_online)
-        self.chat_handler.joinAccepted.connect(self.join_ui)
-
         # Login
         self.login_window.logged_in_user.connect(self.logged_in_user_menu)
 
@@ -270,6 +258,10 @@ class Home(MainWindowUI):
 
     @asyncSlot(str)
     async def start_chat(self, username):
+        self.chat_handler = chat.ChatHandler()
+        self.create_chat_connections()
+
+        self.chat_thread = Thread(target=asyncio.run, args=(self.chat_handler.handler(),))
         self.chat_thread.start()
         while self.chat_handler.websocket is None:
             time.sleep(0.1)
@@ -277,6 +269,13 @@ class Home(MainWindowUI):
         await self.chat_handler.connect(username)
 
         self.started_chat_ui()
+
+    def create_chat_connections(self):
+        self.chat_handler.messageReceived.connect(self.on_message_received)
+        self.chat_handler.setChannels.connect(self.set_channels)
+        self.chat_handler.setSubChannels.connect(self.set_sub_channels)
+        self.chat_handler.usersOnline.connect(self.set_users_online)
+        self.chat_handler.joinAccepted.connect(self.join_ui)
 
     @asyncSlot()
     async def end_chat(self):
@@ -305,6 +304,15 @@ class Home(MainWindowUI):
         self.users_online_menu.setDisabled(True)
         self.message.setEnabled(False)
         self.button_send_message.setEnabled(False)
+
+        self.clear_layout(self.channels_layout)
+        self.clear_layout(self.sub_channels_layout)
+        if self.sub_channel_chat is not None:
+            self.tabs.removeTab(1)
+            self.sub_channel_chat = None
+        self.users_online.setText("0 users online")
+        self.channels_availables.setText("0 channels")
+        self.log_chat.setText("")
 
     def close_connect_window(self):
         self.setEnabled(True)
