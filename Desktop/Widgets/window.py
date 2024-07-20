@@ -160,6 +160,7 @@ class MainWindowUI(QMainWindow, base.BaseWidget):
         self.log_chat = self.create_chat_widget()
 
         self.tabs = QTabWidget()
+        self.tabs.setTabsClosable(True)
         self.tabs.addTab(self.log_chat, 'Logs')
 
         self.message = QLineEdit()
@@ -233,6 +234,7 @@ class Home(MainWindowUI):
         self.username_window.updateUsername.connect(self.update_username)
 
         # Message components
+        self.tabs.tabCloseRequested.connect(self.delete_tab)
         self.message.returnPressed.connect(self.send_message)
         self.button_send_message.clicked.connect(self.send_message)
 
@@ -325,6 +327,12 @@ class Home(MainWindowUI):
         await self.chat_handler.update_username(username)
         self.username_window.username_edit.clear()
         self.username_window.hide()
+
+    def delete_tab(self, index):
+        if index != 0 and (self.sub_channel_chat is None or index != 1):
+            username = self.tabs.tabText(index)
+            self.tabs.removeTab(index)
+            del self.direct_chats[username]
 
     def open_users_online_window(self):
         self.users_online_window.show()
