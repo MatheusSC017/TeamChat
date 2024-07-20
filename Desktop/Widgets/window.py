@@ -235,6 +235,7 @@ class Home(MainWindowUI):
 
         # Message components
         self.tabs.tabCloseRequested.connect(self.delete_tab)
+        self.tabs.currentChanged.connect(self.enable_send_message)
         self.message.returnPressed.connect(self.send_message)
         self.button_send_message.clicked.connect(self.send_message)
 
@@ -484,8 +485,10 @@ class Home(MainWindowUI):
         chat.setReadOnly(True)
         return chat
 
-    def enable_send_message(self):
-        if self.chat_handler.current_channel == 'Global':
+    def enable_send_message(self, index=None):
+        if index is None:
+           index = self.tabs.currentIndex()
+        if index == 0:
             self.message.setEnabled(False)
             self.button_send_message.setEnabled(False)
         else:
