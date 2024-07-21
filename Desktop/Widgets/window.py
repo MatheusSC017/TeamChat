@@ -445,9 +445,10 @@ class Home(MainWindowUI):
 
     @asyncSlot()
     async def send_message(self):
-        recipient = self.tabs.tabText(self.tabs.currentIndex())
+        index = self.tabs.currentIndex()
 
-        if self.chat_handler.current_sub_channel != 'Logs':
+        if index != 0:
+            recipient = self.tabs.tabText(index)
             if self.chat_handler.current_sub_channel == recipient:
                 recipient = None
                 recipient_widget = self.sub_channel_chat
