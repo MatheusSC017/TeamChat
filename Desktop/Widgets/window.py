@@ -25,7 +25,8 @@ import asyncio
 import keyring
 import requests
 import os
-from Widgets import buttons, chat, base, connect, users, channels
+from Widgets import buttons, base, connect, users, channels
+from Client import chat
 
 load_dotenv()
 
