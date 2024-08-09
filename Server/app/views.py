@@ -2,7 +2,6 @@ from aiohttp import web
 from bson import json_util
 import aiohttp
 import json
-import base64
 from actions import *
 
 actions = {'connect', 'disconnect', 'chat_message', 'get_structure', 'join', 'update_username', 'user_list',
