@@ -19,18 +19,13 @@ async def index(request):
 
     request.app['clients'][username] = ws_current
 
-    py_audio = PyAudio()
-    output_stream = py_audio.open(format=paInt16, output=True, rate=44100,
-                                  channels=2, frames_per_buffer=1024)
-
     try:
         async for message in ws_current:
             if message.type == aiohttp.WSMsgType.text:
                 audio = message.json()
-                output_stream.write(base64.b64decode(audio))
-                # for ws in request.app['clients'].values():
-                #     if ws is not ws_current:
-                #         await ws.send_json(json.dumps(audio))
+                for ws in request.app['clients'].values():
+                    if ws is not ws_current:
+                        await ws.send_json(json.dumps(audio))
     finally:
         del request.app['clients'][username]
 
