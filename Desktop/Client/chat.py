@@ -1,11 +1,7 @@
 from PyQt6.QtWidgets import QWidget
 from PyQt6.QtCore import pyqtSignal
-from aiohttp import ClientSession
-from aiohttp.http_websocket import WSMessage
-from aiohttp.web import WSMsgType
 from dotenv import load_dotenv
 from datetime import datetime
-import json
 import asyncio
 import os
 
@@ -30,30 +26,9 @@ class ChatHandler(QWidget, object):
     current_sub_channel = 'Logs'
     structure = None
 
-    async def handler(self) -> None:
-        if HOST is None or PORT is None:
-            raise Exception("Server URL or SSL config not setted.")
-
-        async with ClientSession() as session:
-            async with session.ws_connect(f'{HOST}:{PORT}', ssl=SSL) as ws:
-                self.websocket = ws
-
-                read_message_task = asyncio.create_task(self.subscribe_to_messages())
-                server_update_task = asyncio.create_task(self.get_updates())
-
-                done, pending = await asyncio.wait(
-                    [read_message_task, server_update_task], return_when=asyncio.FIRST_COMPLETED,
-                )
-
-                if not ws.closed:
-                    await ws.close()
-                for task in pending:
-                    task.cancel()
-
     async def connect(self, username) -> None:
         self.user = username
-        await self.websocket.send_json({'action': 'connect',
-                                        'user': self.user})
+        await self.websocket.send_json({'action': 'connect', 'user': self.user})
 
         await self.get_user_list()
         await self.get_structure()
@@ -91,38 +66,6 @@ class ChatHandler(QWidget, object):
                                             'recipient': recipient,
                                             'message': message,
                                             'datetime': datetime.now().strftime('%d/%m/%Y %H:%M:%S')})
-
-    async def subscribe_to_messages(self) -> None:
-        actions = {
-            'connect': self.connect_action,
-            'disconnect': self.disconnect_action,
-            'join': self.join_action,
-            'join_accepted': self.join_accepted_action,
-            'join_refused': self.join_refused_action,
-            'update_username': self.update_username_action,
-            'updated_username': self.updated_username_action,
-            'invalid_username': self.invalid_username_action,
-            'user_list': self.user_list_action,
-            'get_structure': self.get_structure_action,
-            'chat_message': self.chat_message_action,
-            'direct_message': self.direct_message_action,
-        }
-
-        async for message in self.websocket:
-            try:
-                if not isinstance(message, WSMessage) or message.type != WSMsgType.text:
-                    continue
-
-                message_json = message.json()
-                action = message_json.get('action')
-
-                if action in actions.keys():
-                    actions[action](message_json)
-                else:
-                    print(f"Unknown action received: {action}")
-
-            except (json.JSONDecodeError, KeyError) as e:
-                self.logger.error(f"Error processing message: {e}")
 
     def connect_action(self, message_json):
         self.messageReceived.emit(f'{message_json["datetime"]} - {message_json["user"]} connected',

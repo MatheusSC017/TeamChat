@@ -26,7 +26,7 @@ import keyring
 import requests
 import os
 from Widgets import buttons, base, connect, users, channels
-from Client import chat
+from Client import client_handler
 
 load_dotenv()
 
@@ -262,7 +262,7 @@ class Home(MainWindowUI):
 
     @asyncSlot(str)
     async def start_chat(self, username):
-        self.chat_handler = chat.ChatHandler()
+        self.chat_handler = client_handler.ClientHandler()
         self.create_chat_connections()
 
         self.chat_thread = Thread(target=asyncio.run, args=(self.chat_handler.handler(),))

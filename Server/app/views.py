@@ -4,7 +4,7 @@ import aiohttp
 import json
 from actions import *
 
-actions = {'connect', 'disconnect', 'chat_message', 'get_structure', 'join', 'update_username', 'user_list',
+actions = {'connect', 'disconnect', 'chat_message', 'voice', 'get_structure', 'join', 'update_username', 'user_list',
            'direct_message'}
 
 
@@ -37,6 +37,7 @@ async def retrieve_user(request):
     del user['password']
     return web.Response(body=json_util.dumps(user), status=200)
 
+
 async def update_password(request):
     if not request['is_authenticated']:
         return web.Response(status=401)
@@ -45,6 +46,7 @@ async def update_password(request):
     if updated:
         return web.Response(status=202)
     return web.Response(status=500)
+
 
 async def log_in(request):
     user_credentials = await request.post()
@@ -194,12 +196,19 @@ async def index(request):
                                            message_json.get('datetime'),
                                            message_json.get('message'))
 
-                    if action == 'direct_message':
+                    elif action == 'direct_message':
                         await direct_message(request,
                                              username,
                                              message_json.get('recipient'),
                                              message_json.get('datetime'),
                                              message_json.get('message'))
+
+                    elif action == 'voice':
+                        channel = message_json.get('channel')
+                        sub_channel = message_json.get('sub_channel')
+                        audio = message_json.get('audio')
+                        await local_broadcast(request, ws_current, channel, sub_channel,
+                                              {"action": "voice", "audio": audio})
 
                     elif action == 'get_structure':
                         await get_structure(request, ws_current)

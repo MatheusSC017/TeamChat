@@ -16,7 +16,7 @@ PORT = os.environ.get("PORT")
 SSL = bool(os.environ.get("SSL"))
 
 
-class Client:
+class VoiceHandler:
     def __init__(self):
         py_audio = PyAudio()
         self.buffer = 1024
@@ -27,47 +27,19 @@ class Client:
         self.input_stream = py_audio.open(format=paInt16, input=True, rate=44100,
                                           channels=2, frames_per_buffer=self.buffer)
 
-    async def handler(self) -> None:
-        if not HOST or not PORT:
-            raise Exception("Server URL or SSL config not set.")
-
-        async with ClientSession() as session:
-            async with session.ws_connect(f'{HOST}:{PORT}', ssl=SSL, params={"username": "teste"}) as ws:
-                self.websocket = ws
-
-                audio_received_task = asyncio.create_task(self.audio_received())
-                record_audio_task = asyncio.create_task(self.record_audio())
-
-                try:
-                    await asyncio.gather(record_audio_task, audio_received_task)
-                except asyncio.CancelledError:
-                    pass
-                finally:
-                    if not ws.closed:
-                        await ws.close()
-
     async def record_audio(self):
         while True:
-            data = self.input_stream.read(self.buffer)
+            audio = self.input_stream.read(self.buffer)
             if self.websocket.closed:
                 break
-            await self.websocket.send_str(json.dumps(base64.b64encode(data).decode('ascii')))
+            await self.websocket.send_str(json.dumps({
+                "action": "voice",
+                "audio": base64.b64encode(audio).decode('ascii'),
+                "channel": self.current_channel,
+                "sub_channel": self.current_sub_channel,
+            }))
             await asyncio.sleep(0.01)
 
-    async def audio_received(self):
-        async for message in self.websocket:
-            try:
-                if not isinstance(message, WSMessage) or message.type != WSMsgType.text:
-                    continue
-
-                audio = message.json()
-                self.output_stream.write(base64.b64decode(audio))
-
-            except (json.JSONDecodeError, KeyError) as e:
-                print(f"Error processing message: {e}")
-
-
-
-client = Client()
-chat_thread = Thread(target=asyncio.run, args=(client.handler(),))
-chat_thread.start()
+    def listen_audio(self, message_json):
+        audio = message_json.get('audio')
+        self.output_stream.write(base64.b64decode(audio))
