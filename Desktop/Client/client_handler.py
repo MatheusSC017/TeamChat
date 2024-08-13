@@ -41,10 +41,10 @@ class ClientHandler(ChatHandler, VoiceHandler):
 
                 read_message_task = asyncio.create_task(self.subscribe_to_messages())
                 server_update_task = asyncio.create_task(self.get_updates())
-                # record_audio_task = asyncio.create_task(self.record_audio())
+                record_audio_task = asyncio.create_task(self.record_audio())
 
                 try:
-                    await asyncio.gather(read_message_task, server_update_task)
+                    await asyncio.gather(record_audio_task, read_message_task, server_update_task)
                 except asyncio.CancelledError:
                     pass
                 finally:
