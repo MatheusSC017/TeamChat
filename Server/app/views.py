@@ -182,12 +182,12 @@ async def index(request):
                 if action not in actions:
                     continue
 
-                if username not in request.app['user_list'].keys():
-                    if action == 'connect':
-                        username = message_json.get('user')
-                        await connect(request, ws_current, username)
+                if action == 'connect':
+                    username = message_json.get('user')
+                    connected = await connect(request, ws_current, username)
+                    await ws_current.send_json({"action": "connect", "connected": connected, "username": username})
 
-                else:
+                if username is not None and username in request.app['user_list'].keys():
 
                     if action == 'chat_message':
                         await chat_message(request,
@@ -207,8 +207,11 @@ async def index(request):
                         channel = message_json.get('channel')
                         sub_channel = message_json.get('sub_channel')
                         audio = message_json.get('audio')
-                        await local_broadcast(request, ws_current, channel, sub_channel,
-                                              {"action": "voice", "audio": audio})
+                        try:
+                            await local_broadcast(request, ws_current, channel, sub_channel,
+                                                  {"action": "voice", "audio": audio})
+                        finally:
+                            pass
 
                     elif action == 'get_structure':
                         await get_structure(request, ws_current)

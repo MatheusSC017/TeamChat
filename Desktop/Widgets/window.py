@@ -27,6 +27,7 @@ import requests
 import os
 from Widgets import buttons, base, connect, users, channels
 from Client import client_handler
+from Widgets.dialogs import WarningDialog
 
 load_dotenv()
 
@@ -269,17 +270,23 @@ class Home(MainWindowUI):
         self.chat_thread.start()
         while self.chat_handler.websocket is None:
             time.sleep(0.1)
-        self.connected = True
         await self.chat_handler.connect(username)
 
-        self.started_chat_ui()
-
     def create_chat_connections(self):
+        self.chat_handler.userConnected.connect(self.user_connected)
         self.chat_handler.messageReceived.connect(self.on_message_received)
         self.chat_handler.setChannels.connect(self.set_channels)
         self.chat_handler.setSubChannels.connect(self.set_sub_channels)
         self.chat_handler.usersOnline.connect(self.set_users_online)
         self.chat_handler.joinAccepted.connect(self.join_ui)
+
+    def user_connected(self, connected):
+        self.connected = connected
+        if connected:
+            self.started_chat_ui()
+        else:
+            dlg = WarningDialog(self, "Connection refused: username already in use")
+            dlg.exec()
 
     @asyncSlot()
     async def end_chat(self):

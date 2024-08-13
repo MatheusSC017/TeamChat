@@ -8,11 +8,11 @@ log = logging.getLogger(__name__)
 
 
 async def connect(request, ws_current, username):
-    if len(username) and username not in request.app['user_list'].keys():
+    if username is not None and len(username) and username not in request.app['user_list'].keys():
         log.info('%s connected', username)
 
         content = {
-            'action': 'connect',
+            'action': 'user_logged_in',
             'user': username,
             'datetime': datetime.now().strftime('%d/%m/%Y %H:%M:%S')
         }
@@ -20,6 +20,9 @@ async def connect(request, ws_current, username):
 
         request.app['websockets']['Global']['Logs']['Users'][username] = ws_current
         request.app['user_list'][username] = ('Global', 'Logs')
+        return True
+    else:
+        return False
 
 
 async def disconnect(request, ws_current, username):
@@ -30,7 +33,7 @@ async def disconnect(request, ws_current, username):
         log.info('%s disconnected.', username)
 
         content = {
-            'action': 'disconnect',
+            'action': 'user_logged_out',
             'user': username,
             'datetime': datetime.now().strftime('%d/%m/%Y %H:%M:%S')
         }

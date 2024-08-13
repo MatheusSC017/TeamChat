@@ -3,6 +3,7 @@ from PyQt6.QtCore import pyqtSignal
 from dotenv import load_dotenv
 from aiohttp.http_websocket import WSMessage
 from aiohttp.web import WSMsgType
+import inspect
 import json
 import asyncio
 import os
@@ -19,8 +20,8 @@ SSL = bool(os.environ.get("SSL"))
 
 
 class ClientHandler(ChatHandler, VoiceHandler):
+    userConnected = pyqtSignal(bool)
     usersOnline = pyqtSignal(list)
-    messageReceived = pyqtSignal(str, str)
     setChannels = pyqtSignal(list)
     setSubChannels = pyqtSignal(dict)
     joinAccepted = pyqtSignal(str, str)
@@ -40,10 +41,10 @@ class ClientHandler(ChatHandler, VoiceHandler):
 
                 read_message_task = asyncio.create_task(self.subscribe_to_messages())
                 server_update_task = asyncio.create_task(self.get_updates())
-                record_audio_task = asyncio.create_task(self.record_audio())
+                # record_audio_task = asyncio.create_task(self.record_audio())
 
                 try:
-                    await asyncio.gather(record_audio_task, read_message_task, server_update_task)
+                    await asyncio.gather(read_message_task, server_update_task)
                 except asyncio.CancelledError:
                     pass
                 finally:
@@ -53,7 +54,8 @@ class ClientHandler(ChatHandler, VoiceHandler):
     async def subscribe_to_messages(self) -> None:
         actions = {
             'connect': self.connect_action,
-            'disconnect': self.disconnect_action,
+            'user_logged_in': self.user_logged_in_action,
+            'user_logged_out': self.user_logged_out_action,
             'join': self.join_action,
             'join_accepted': self.join_accepted_action,
             'join_refused': self.join_refused_action,
@@ -76,7 +78,10 @@ class ClientHandler(ChatHandler, VoiceHandler):
                 action = message_json.get('action')
 
                 if action in actions.keys():
-                    actions[action](message_json)
+                    if inspect.iscoroutinefunction(actions[action]):
+                        await actions[action](message_json)
+                    else:
+                        actions[action](message_json)
                 else:
                     print(f"Unknown action received: {action}")
 
@@ -84,13 +89,10 @@ class ClientHandler(ChatHandler, VoiceHandler):
                 self.logger.error(f"Error processing message: {e}")
 
     async def connect(self, username) -> None:
-        self.user = username
-        await self.websocket.send_json({'action': 'connect', 'user': self.user})
-
-        await self.get_user_list()
-        await self.get_structure()
+        await self.websocket.send_json({'action': 'connect', 'user': username})
 
     async def disconnect(self) -> None:
+
         await self.websocket.send_json({'action': 'disconnect', })
 
     async def get_updates(self) -> None:
@@ -113,14 +115,22 @@ class ClientHandler(ChatHandler, VoiceHandler):
     async def update_username(self, username: str) -> None:
         await self.websocket.send_json({'action': 'update_username', 'username': username})
 
-    def connect_action(self, message_json):
+    async def connect_action(self, message_json):
+        self.userConnected.emit(message_json['connected'])
+
+        if message_json['connected']:
+            self.user = message_json['username']
+            await self.get_user_list()
+            await self.get_structure()
+
+    def user_logged_in_action(self, message_json):
         self.messageReceived.emit(f'{message_json["datetime"]} - {message_json["user"]} connected',
                                   'Global')
         self.structure['Global']['Logs']['Users'].append(message_json['user'])
         if self.current_channel == 'Global':
             self.setSubChannels.emit(self.structure['Global'])
 
-    def disconnect_action(self, message_json):
+    def user_logged_out_action(self, message_json):
         self.messageReceived.emit(f'{message_json["datetime"]} - {message_json["user"]} disconnected',
                                   'Global')
         channel, sub_channel = self.get_user_position(message_json["user"])
@@ -158,7 +168,8 @@ class ClientHandler(ChatHandler, VoiceHandler):
         self.user = message_json['username']
 
     def invalid_username_action(self, message_json):
-        print("Username already in use")
+        dlg = WarningDialog(self, "Username already in use")
+        dlg.exec()
 
     def user_list_action(self, message_json):
         self.usersOnline.emit(message_json['user_list'])

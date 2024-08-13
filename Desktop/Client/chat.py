@@ -1,8 +1,11 @@
 from PyQt6.QtWidgets import QWidget
+from PyQt6.QtCore import pyqtSignal
 from datetime import datetime
 
 
 class ChatHandler(QWidget, object):
+    messageReceived = pyqtSignal(str, str)
+
     async def send_input_message(self, message: str, recipient: str = None) -> None:
         if recipient is None:
             await self.websocket.send_json({'action': 'chat_message',

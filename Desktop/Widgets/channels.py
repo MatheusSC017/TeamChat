@@ -374,7 +374,6 @@ class ChannelButton(QAbstractButton, BaseWidget):
             'old_channel_name': self.channel,
             'new_channel_name': self.channel_form.text(),
         }
-        print(channel_data)
         token = keyring.get_password('system', 'TeamChatToken')
         headers = {
             'Authorization': token
