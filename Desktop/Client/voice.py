@@ -41,5 +41,6 @@ class VoiceHandler:
             await asyncio.sleep(0.01)
 
     def listen_audio(self, message_json):
-        audio = message_json.get('audio')
-        self.output_stream.write(base64.b64decode(audio))
+        if self.current_channel != 'Global':
+            audio = message_json.get('audio')
+            self.output_stream.write(base64.b64decode(audio))
