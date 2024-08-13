@@ -56,9 +56,8 @@ class ClientHandler(ChatHandler, VoiceHandler):
             'connect': self.connect_action,
             'user_logged_in': self.user_logged_in_action,
             'user_logged_out': self.user_logged_out_action,
+            'user_joined': self.user_joined_action,
             'join': self.join_action,
-            'join_accepted': self.join_accepted_action,
-            'join_refused': self.join_refused_action,
             'update_username': self.update_username_action,
             'updated_username': self.updated_username_action,
             'invalid_username': self.invalid_username_action,
@@ -138,7 +137,7 @@ class ClientHandler(ChatHandler, VoiceHandler):
         if self.current_channel == channel:
             self.setSubChannels.emit(self.structure[channel])
 
-    def join_action(self, message_json):
+    def user_joined_action(self, message_json):
         self.messageReceived.emit(f'{message_json["user"]} joined {message_json["channel"]} / '
                                   f'{message_json["sub_channel"]}',
                                   'Global')
@@ -149,13 +148,13 @@ class ClientHandler(ChatHandler, VoiceHandler):
                                       'Local')
         self.update_structure(message_json["channel"], message_json["sub_channel"], message_json["user"])
 
-    def join_accepted_action(self, message_json):
-        self.update_structure(message_json['channel'], message_json['sub_channel'], self.user)
-        self.joinAccepted.emit(message_json['channel'], message_json['sub_channel'])
-
-    def join_refused_action(self, message_json):
-        dlg = WarningDialog(self, message_json['error'])
-        dlg.exec()
+    def join_action(self, message_json):
+        if message_json['status']:
+            self.update_structure(message_json['channel'], message_json['sub_channel'], self.user)
+            self.joinAccepted.emit(message_json['channel'], message_json['sub_channel'])
+        else:
+            dlg = WarningDialog(self, message_json['message'])
+            dlg.exec()
 
     def update_username_action(self, message_json):
         self.messageReceived.emit(f'{message_json["old_username"]} updated your name to '

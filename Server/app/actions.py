@@ -68,7 +68,7 @@ async def join(request, ws_current, username, channel, sub_channel, **kwargs):
             salt = configs.get('password')[0:16]
             if kwargs.get('password') is None or configs.get('password') != hash_password(kwargs.get('password'), salt):
                 await ws_current.send_json(
-                    {'action': 'join_refused', 'error': 'Connection refused: incorrect password'})
+                    {'action': 'join', 'status': False, 'message': 'Connection refused: incorrect password'})
                 return False
         return True
 
@@ -83,8 +83,8 @@ async def join(request, ws_current, username, channel, sub_channel, **kwargs):
         if configs.get('only_logged_in_users'):
             access_token = kwargs.get('Authorization')
             if access_token is None or not request.app['tokens'].authenticate(base64.b64decode(access_token))[1]:
-                await ws_current.send_json({'action': 'join_refused',
-                                            'error': 'Connection refused: Only logged in users are allowed'})
+                await ws_current.send_json({'action': 'join', 'status': False,
+                                            'message': 'Connection refused: Only logged in users are allowed'})
                 return False
         return True
 
@@ -95,10 +95,10 @@ async def join(request, ws_current, username, channel, sub_channel, **kwargs):
         request.app['user_list'][username] = (channel, sub_channel)
 
         log.info('%s joined the %s / %s ', username, channel, sub_channel)
-        await ws_current.send_json({'action': 'join_accepted', 'channel': channel, 'sub_channel': sub_channel})
+        await ws_current.send_json({'action': 'join', 'status': True, 'channel': channel, 'sub_channel': sub_channel})
 
         content = {
-            'action': 'join',
+            'action': 'user_joined',
             'user': username,
             'old_channel': old_channel,
             'old_sub_channel': old_sub_channel,
