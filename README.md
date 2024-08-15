@@ -35,3 +35,17 @@ HOST=http://127.0.0.1
 PORT=8080
 SSL=0
 ```
+
+## Create installer to desktop
+
+Use the command below to create the chat client installer
+
+```
+pyinstaller main.py
+```
+
+or
+
+```
+pyinstaller --onefile main.py
+```
